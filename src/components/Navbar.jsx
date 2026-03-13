@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { googleLogin } from '../services/api';
@@ -6,42 +6,75 @@ import './Navbar.css';
 
 export default function Navbar() {
   const { user, token, loginWithToken, logout } = useAuth();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [searchQuery, setSearchQuery]   = useState('');
+  const [mobileOpen, setMobileOpen]     = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const navigate = useNavigate();
+  const [loginError, setLoginError]     = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
+  const navigate    = useNavigate();
   const googleBtnRef = useRef(null);
+  const clientId    = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
-  // Initialize Google Sign-In button inside modal
+  // Initialize Google once when modal opens
   useEffect(() => {
     if (!showLoginModal) return;
-    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-    if (!clientId || !window.google) return;
-    const timer = setTimeout(() => {
-      if (!googleBtnRef.current) return;
-      window.google.accounts.id.initialize({
-        client_id: clientId,
-        callback: handleGoogleResponse,
-      });
-      window.google.accounts.id.renderButton(googleBtnRef.current, {
-        theme: 'filled_black',
-        size: 'large',
-        shape: 'rectangular',
-        width: 280,
-        text: 'signin_with',
-      });
-    }, 100);
-    return () => clearTimeout(timer);
+    setLoginError('');
+
+    function initGoogle() {
+      if (!window.google || !googleBtnRef.current) return;
+      try {
+        window.google.accounts.id.initialize({
+          client_id: clientId,
+          callback: handleCredential,
+          ux_mode: 'popup',
+        });
+        window.google.accounts.id.renderButton(googleBtnRef.current, {
+          theme: 'filled_black',
+          size: 'large',
+          shape: 'rectangular',
+          width: 280,
+          text: 'signin_with',
+          logo_alignment: 'center',
+        });
+      } catch (e) {
+        console.error('Google init error:', e);
+        setLoginError('Google Sign-In failed to load. Please refresh.');
+      }
+    }
+
+    // Wait for Google script + DOM
+    if (window.google) {
+      setTimeout(initGoogle, 50);
+    } else {
+      // Poll until google script loads
+      let attempts = 0;
+      const interval = setInterval(() => {
+        attempts++;
+        if (window.google) { clearInterval(interval); setTimeout(initGoogle, 50); }
+        if (attempts > 20) { clearInterval(interval); setLoginError('Google Sign-In unavailable. Check your internet connection.'); }
+      }, 200);
+      return () => clearInterval(interval);
+    }
   }, [showLoginModal]);
 
-  async function handleGoogleResponse(response) {
+  async function handleCredential(response) {
+    if (!response?.credential) {
+      setLoginError('No credential received. Please try again.');
+      return;
+    }
+    setLoginLoading(true);
+    setLoginError('');
     try {
       const data = await googleLogin(response.credential);
+      if (data.error) throw new Error(data.error);
       loginWithToken(data.token, data.user);
       setShowLoginModal(false);
+      setLoginLoading(false);
     } catch (err) {
-      console.error('Login failed', err);
+      console.error('Login error:', err);
+      setLoginError('Sign-in failed: ' + (err.message || 'Please try again.'));
+      setLoginLoading(false);
     }
   }
 
@@ -51,6 +84,12 @@ export default function Navbar() {
       navigate('/browse?q=' + encodeURIComponent(searchQuery));
       setSearchQuery('');
     }
+  }
+
+  function openModal() {
+    setShowLoginModal(true);
+    setLoginError('');
+    setLoginLoading(false);
   }
 
   return (
@@ -90,7 +129,7 @@ export default function Navbar() {
               <div className="user-menu-wrap">
                 <button className="user-avatar-btn" onClick={() => setUserMenuOpen(!userMenuOpen)}>
                   {user.avatar
-                    ? <img src={user.avatar} alt={user.name} className="user-avatar-img" />
+                    ? <img src={user.avatar} alt={user.name} className="user-avatar-img" referrerPolicy="no-referrer" />
                     : <div className="user-avatar-placeholder">{user.name?.[0]}</div>
                   }
                 </button>
@@ -99,17 +138,19 @@ export default function Navbar() {
                     <div className="dropdown-user-info">
                       <div className="dropdown-user-name">{user.name}</div>
                       <div className="dropdown-user-email">{user.email}</div>
+                      <div style={{fontFamily:'var(--font-mono)', fontSize:'0.65rem', color:'var(--accent-purple)', marginTop:'2px'}}>{user.role}</div>
                     </div>
                     <div className="dropdown-divider"/>
-                    <Link to="/dashboard" onClick={() => setUserMenuOpen(false)}>Author Dashboard</Link>
-                    <Link to="/bookmarks" onClick={() => setUserMenuOpen(false)}>Bookmarks</Link>
+                    {user.role === 'admin' && (
+                      <Link to="/dashboard" onClick={() => setUserMenuOpen(false)}>Dashboard</Link>
+                    )}
                     <div className="dropdown-divider"/>
                     <button className="dropdown-logout" onClick={() => { logout(); setUserMenuOpen(false); }}>Sign Out</button>
                   </div>
                 )}
               </div>
             ) : (
-              <button className="sign-in-btn" onClick={() => setShowLoginModal(true)}>
+              <button className="sign-in-btn" onClick={openModal}>
                 <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 Sign In
               </button>
@@ -133,7 +174,7 @@ export default function Navbar() {
               <Link to="/genres" className="mobile-nav-link" onClick={() => setMobileOpen(false)}>Genres</Link>
               <Link to="/rankings" className="mobile-nav-link" onClick={() => setMobileOpen(false)}>Rankings</Link>
               <Link to="/updates" className="mobile-nav-link" onClick={() => setMobileOpen(false)}>Updates</Link>
-              {user && <Link to="/dashboard" className="mobile-nav-link" onClick={() => setMobileOpen(false)}>Dashboard</Link>}
+              {user?.role === 'admin' && <Link to="/dashboard" className="mobile-nav-link" onClick={() => setMobileOpen(false)}>Dashboard</Link>}
             </div>
           </div>
         )}
@@ -146,22 +187,38 @@ export default function Navbar() {
             <button className="modal-close" onClick={() => setShowLoginModal(false)}>
               <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
+
             <div className="login-logo">
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
                 <path d="M12 2L2 7l10 5 10-5-10-5z" fill="var(--accent-orange)"/>
                 <path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="var(--accent-purple)" strokeWidth="1.5"/>
               </svg>
             </div>
+
             <h2 className="login-title">Welcome to idenwebstudio</h2>
             <p className="login-subtitle">Sign in to bookmark novels and track your reading progress.</p>
+
             <div className="login-google-wrap">
-              <div ref={googleBtnRef} />
-              {!import.meta.env.VITE_GOOGLE_CLIENT_ID && (
+              {loginLoading ? (
+                <div className="login-loading">
+                  <div className="login-spinner" />
+                  <span>Signing in...</span>
+                </div>
+              ) : (
+                <div ref={googleBtnRef} style={{minHeight:'44px', display:'flex', alignItems:'center', justifyContent:'center'}} />
+              )}
+
+              {!clientId && (
                 <div className="login-env-warning">
-                  Add VITE_GOOGLE_CLIENT_ID to your .env file to enable Google Sign-In
+                  VITE_GOOGLE_CLIENT_ID is not set in environment variables.
                 </div>
               )}
+
+              {loginError && (
+                <div className="login-error-msg">{loginError}</div>
+              )}
             </div>
+
             <div className="login-footer-note">
               By signing in you agree to our Terms of Service and Privacy Policy.
             </div>

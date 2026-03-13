@@ -331,3 +331,31 @@
   border-radius: 6px; padding: 8px 12px; text-align: center;
 }
 .login-footer-note { font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono); line-height: 1.5; }
+
+/* Login loading */
+.login-loading {
+  display: flex; align-items: center; gap: 10px;
+  color: var(--text-muted); font-family: var(--font-mono); font-size: 0.82rem;
+  padding: 12px 0;
+}
+.login-spinner {
+  width: 20px; height: 20px;
+  border: 2px solid rgba(139,92,246,0.2);
+  border-top-color: var(--accent-purple);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Login error */
+.login-error-msg {
+  background: rgba(239,68,68,0.08);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: #f87171;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-align: center;
+  width: 100%;
+}
