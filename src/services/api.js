@@ -47,3 +47,9 @@ export const getChapter    = (novelId, num)  => req('/novels/' + novelId + '/cha
 export const createChapter = (novelId, data) => req('/novels/' + novelId + '/chapters', { method: 'POST', body: JSON.stringify(data) });
 export const updateChapter = (novelId, num, data) => req('/novels/' + novelId + '/chapters/' + num, { method: 'PUT', body: JSON.stringify(data) });
 export const deleteChapter = (novelId, num)  => req('/novels/' + novelId + '/chapters/' + num, { method: 'DELETE' });
+
+// Comments
+export const getComments    = (novelId, page = 1) => req('/novels/' + novelId + '/comments?page=' + page + '&limit=20');
+export const addComment     = (novelId, text)     => req('/novels/' + novelId + '/comments', { method: 'POST', body: JSON.stringify({ text }) });
+export const deleteComment  = (novelId, commentId)=> req('/novels/' + novelId + '/comments/' + commentId, { method: 'DELETE' });
+export const likeComment    = (novelId, commentId)=> req('/novels/' + novelId + '/comments/' + commentId + '/like', { method: 'POST' });

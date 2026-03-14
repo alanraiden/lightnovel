@@ -1,6 +1,7 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { getNovel, getChapters, rateNovel } from '../services/api';
+import CommentSection from '../components/CommentSection';
 import { useAuth } from '../context/AuthContext';
 import './NovelPage.css';
 
@@ -225,6 +226,11 @@ export default function NovelPage() {
             </div>
           )}
         </main>
+      </div>
+
+      {/* Comments */}
+      <div className="container" style={{paddingBottom:'80px'}}>
+        <CommentSection novelId={id} />
       </div>
     </div>
   );
