@@ -46,6 +46,10 @@ export default function NovelPage() {
         const [n, chs] = await Promise.all([getNovel(id), getChapters(id)]);
         setNovel(n);
         setChapters(chs);
+        // Update page title and meta for SEO
+        document.title = n.title + ' - idenwebstudio';
+        const desc = document.querySelector('meta[name="description"]');
+        if (desc) desc.setAttribute('content', n.description?.slice(0, 160) || n.title);
       } catch {
         navigate('/');
       } finally {

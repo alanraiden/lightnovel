@@ -44,6 +44,7 @@ export default function ReadPage() {
         setChapters(chs);
         const ch = await getChapter(id, num);
         setChapter(ch);
+        document.title = n.title + ' Ch.' + num + ' - idenwebstudio';
       } catch (err) {
         setError('Chapter not found.');
       } finally {
