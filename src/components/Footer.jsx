@@ -43,8 +43,8 @@ export default function Footer() {
             <div className="footer-links-title">Platform</div>
             <a href="#">About Us</a>
             <a href="#">Contact</a>
-            <a href="#">Privacy Policy</a>
-            <a href="#">Terms of Service</a>
+            <Link to="/privacy">Privacy Policy</Link>
+            <Link to="/privacy">Terms of Service</Link>
           </div>
         </div>
 
