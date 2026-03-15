@@ -1,21 +1,15 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { getNovel, getChapter, getChapters } from '../services/api';
+import { getNovel, getNovelBySlug, getChapter, getChapters } from '../services/api';
 import './ReadPage.css';
+import AdBanner from '../components/AdBanner';
 
 const FONT_SIZES = [13, 15, 16, 17, 18, 19, 20, 22, 24, 26];
 
-function AdSlot({ label = 'Advertisement' }) {
-  return (
-    <div className="ad-slot">
-      <div className="ad-slot-label">{label}</div>
-      <div className="ad-slot-hint">Google AdSense — replace with ins tag</div>
-    </div>
-  );
-}
+
 
 export default function ReadPage() {
-  const { id, chapterNum } = useParams();
+  const { id, slug, chapterNum } = useParams();
   const navigate = useNavigate();
   const num = parseInt(chapterNum) || 1;
 
@@ -39,12 +33,14 @@ export default function ReadPage() {
       setLoading(true);
       setError('');
       try {
-        const [n, chs] = await Promise.all([getNovel(id), getChapters(id)]);
+        const n = slug ? await getNovelBySlug(slug) : await getNovel(id);
+        const novelId = n._id;
+        const chs = await getChapters(novelId);
         setNovel(n);
         setChapters(chs);
-        const ch = await getChapter(id, num);
+        const ch = await getChapter(n._id, num);
         setChapter(ch);
-        document.title = n.title + ' Ch.' + num + ' - idenwebstudio';
+        document.title = n.title + ' Chapter ' + num + ' - idenwebstudio';
       } catch (err) {
         setError('Chapter not found.');
       } finally {
@@ -102,7 +98,7 @@ export default function ReadPage() {
       </div>
 
       <div className="read-toolbar">
-        <Link to={`/novel/${id}`} className="read-back-btn">
+        <Link to={novel?.slug ? `/novel/s/${novel.slug}` : `/novel/${id || novel?._id}`} className="read-back-btn">
           <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
           <span>{novel?.title || 'Back'}</span>
         </Link>
@@ -138,7 +134,7 @@ export default function ReadPage() {
           </div>
           <div className="toc-list">
             {sortedChapters.map(ch => (
-              <Link key={ch._id} to={`/read/${id}/${ch.number}`}
+              <Link key={ch._id} to={novel?.slug ? `/read/s/${novel.slug}/${ch.number}` : `/read/${novel?._id}/${ch.number}`}
                 className={`toc-item ${ch.number === num ? 'active' : ''}`}
                 onClick={() => setShowToc(false)}>
                 <span className="toc-num">Ch. {ch.number}</span>
@@ -179,7 +175,7 @@ export default function ReadPage() {
               </div>
             </div>
 
-            <AdSlot label="Top Ad — Google AdSense" />
+            <AdBanner slot="TOP_AD_SLOT_ID" format="horizontal" style={{margin:'24px 0'}} />
 
             <div
               className="reading-content"
@@ -187,7 +183,7 @@ export default function ReadPage() {
               dangerouslySetInnerHTML={{ __html: formatContent(chapter.content) }}
             />
 
-            <AdSlot label="Mid-Content Ad — Google AdSense" />
+            <AdBanner slot="MID_AD_SLOT_ID" format="rectangle" style={{margin:'32px 0'}} />
 
             <div className="kofi-reading-cta">
               <div className="kofi-cta-text">
@@ -201,19 +197,19 @@ export default function ReadPage() {
 
             <div className="reading-nav">
               {prevChapter ? (
-                <Link to={`/read/${id}/${prevChapter.number}`} className="read-nav-btn prev">
+                <Link to={novel?.slug ? `/read/s/${novel.slug}/${prevChapter.number}` : `/read/${novel?._id}/${prevChapter.number}`} className="read-nav-btn prev">
                   <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
                   <span>Ch. {prevChapter.number}</span>
                 </Link>
               ) : <div />}
 
-              <Link to={`/novel/${id}`} className="read-nav-toc">
+              <Link to={novel?.slug ? `/novel/s/${novel.slug}` : `/novel/${id || novel?._id}`} className="read-nav-toc">
                 <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
                 Contents
               </Link>
 
               {nextChapter ? (
-                <Link to={`/read/${id}/${nextChapter.number}`} className="read-nav-btn next">
+                <Link to={novel?.slug ? `/read/s/${novel.slug}/${nextChapter.number}` : `/read/${novel?._id}/${nextChapter.number}`} className="read-nav-btn next">
                   <span>Ch. {nextChapter.number}</span>
                   <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                 </Link>

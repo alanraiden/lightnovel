@@ -36,6 +36,7 @@ export const getMe        = () => req('/auth/me');
 // Novels
 export const getNovels    = (params = {}) => req('/novels?' + new URLSearchParams(params).toString());
 export const getNovel     = (id) => req('/novels/' + id);
+export const getNovelBySlug = (slug) => req('/novels/slug/' + slug);
 export const createNovel  = (fd)     => reqForm('/novels', 'POST', fd);
 export const updateNovel  = (id, fd) => reqForm('/novels/' + id, 'PUT', fd);
 export const deleteNovel  = (id) => req('/novels/' + id, { method: 'DELETE' });

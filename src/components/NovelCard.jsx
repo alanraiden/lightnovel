@@ -3,11 +3,12 @@ import { Link } from 'react-router-dom';
 const PLACEHOLDER = 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=400&h=600&fit=crop';
 
 export default function NovelCard({ novel, rank }) {
-  // Support both _id (MongoDB) and id (mock data)
-  const id = novel._id || novel.id;
+  // Use slug URL if available, fallback to ID
+  const id   = novel._id || novel.id;
+  const href = novel.slug ? `/novel/s/${novel.slug}` : `/novel/${id}`;
 
   return (
-    <Link to={`/novel/${id}`} style={{ textDecoration: 'none' }}>
+    <Link to={href} style={{ textDecoration: 'none' }}>
       <div className="novel-card">
         <div className="novel-card-cover">
           <img
