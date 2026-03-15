@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getNovel, getNovelBySlug, getChapter, getChapters } from '../services/api';
 import '../index.css';
@@ -7,58 +7,73 @@ import AdBanner from '../components/AdBanner';
 
 const FONT_SIZES = [13, 15, 16, 17, 18, 19, 20, 22, 24, 26];
 
-
-
 export default function ReadPage() {
   const { id, slug, chapterNum, chapterSlug } = useParams();
   const navigate = useNavigate();
-  // chapterSlug comes from slug route: /read/s/:slug/:chapterSlug (e.g. "chapter-5")
-  // chapterNum comes from ID route:   /read/:id/:chapterNum       (e.g. "5")
-  const rawNum = chapterSlug || chapterNum || '1';
-  const num = parseInt(String(rawNum).replace(/[^0-9]/g, '')) || 1;
 
-  const [novel, setNovel]       = useState(null);
-  const [chapter, setChapter]   = useState(null);
+  // Works with BOTH route patterns:
+  //   /read/s/:slug/:chapterSlug       → chapterSlug = 'chapter-1'
+  //   /read/s/:slug/chapter-:chapterNum → chapterNum  = '1'
+  //   /read/:id/:chapterNum             → chapterNum  = '1'
+  const rawNum = chapterSlug || chapterNum || '1';
+  const num = parseInt(String(rawNum).replace(/[^0-9]/g, ''), 10) || 1;
+
+  const [novel,    setNovel]    = useState(null);
+  const [chapter,  setChapter]  = useState(null);
   const [chapters, setChapters] = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState('');
+  const [loading,  setLoading]  = useState(true);
+  const [error,    setError]    = useState('');
 
   const [fontSize, setFontSize] = useState(() => {
-    const saved = localStorage.getItem('ns_fontsize');
-    return saved ? Number(saved) : 18;
+    try { const s = localStorage.getItem('ns_fontsize'); return s ? Number(s) : 18; } catch { return 18; }
   });
-  const [readMode, setReadMode] = useState(() => localStorage.getItem('ns_readmode') || 'dark');
+  const [readMode, setReadMode] = useState(() => {
+    try { return localStorage.getItem('ns_readmode') || 'dark'; } catch { return 'dark'; }
+  });
   const [progress, setProgress] = useState(0);
-  const [showToc, setShowToc]   = useState(false);
+  const [showToc,  setShowToc]  = useState(false);
   const contentRef = useRef(null);
 
   useEffect(() => {
+    let cancelled = false;
     async function load() {
       setLoading(true);
       setError('');
       setChapter(null);
       setNovel(null);
       try {
-        console.log('Loading - slug:', slug, 'id:', id, 'num:', num);
-        const n = slug ? await getNovelBySlug(slug) : await getNovel(id);
-        console.log('Novel loaded:', n?.title, n?._id);
+        // Determine how to fetch the novel
+        let n;
+        if (slug) {
+          n = await getNovelBySlug(slug);
+        } else if (id) {
+          n = await getNovel(id);
+        } else {
+          throw new Error('No novel identifier in URL');
+        }
+
+        if (cancelled) return;
+        if (!n || !n._id) throw new Error('Novel not found');
+
         setNovel(n);
+
         const [chs, ch] = await Promise.all([
           getChapters(n._id),
-          getChapter(n._id, num)
+          getChapter(n._id, num),
         ]);
-        console.log('Chapter loaded:', ch?.title, 'chapters count:', chs?.length);
-        setChapters(chs);
+
+        if (cancelled) return;
+        setChapters(Array.isArray(chs) ? chs : []);
         setChapter(ch);
-        document.title = n.title + ' Chapter ' + num + ' - idenwebstudio';
+        document.title = `${n.title} Chapter ${num} - idenwebstudio`;
       } catch (err) {
-        console.error('ReadPage load error:', err.message, err);
-        setError(err.message || 'Chapter not found.');
+        if (!cancelled) setError(err.message || 'Could not load chapter.');
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
     load();
+    return () => { cancelled = true; };
   }, [id, slug, num]);
 
   useEffect(() => { window.scrollTo(0, 0); }, [id, slug, num]);
@@ -75,23 +90,40 @@ export default function ReadPage() {
   }, [chapter]);
 
   function changeFontSize(delta) {
-    const idx = FONT_SIZES.indexOf(fontSize);
+    const idx  = FONT_SIZES.indexOf(fontSize);
     const next = FONT_SIZES[Math.max(0, Math.min(FONT_SIZES.length - 1, idx + delta))];
     setFontSize(next);
-    localStorage.setItem('ns_fontsize', next);
+    try { localStorage.setItem('ns_fontsize', next); } catch {}
   }
 
   function changeMode(m) {
     setReadMode(m);
-    localStorage.setItem('ns_readmode', m);
+    try { localStorage.setItem('ns_readmode', m); } catch {}
   }
 
-  const sortedChapters = [...chapters].sort((a,b) => a.number - b.number);
-  const currentIdx = sortedChapters.findIndex(c => c.number === num);
+  const sortedChapters = [...chapters].sort((a, b) => a.number - b.number);
+  const currentIdx  = sortedChapters.findIndex(c => c.number === num);
   const prevChapter = currentIdx > 0 ? sortedChapters[currentIdx - 1] : null;
   const nextChapter = currentIdx < sortedChapters.length - 1 ? sortedChapters[currentIdx + 1] : null;
 
-  // Format content — preserve paragraph breaks
+  // Safe back-links — always resolve to a valid URL
+  const novelHref = novel?.slug
+    ? `/novel/s/${novel.slug}`
+    : novel?._id
+      ? `/novel/${novel._id}`
+      : slug
+        ? `/novel/s/${slug}`
+        : id
+          ? `/novel/${id}`
+          : '/';
+
+  function chapterHref(ch) {
+    if (!ch) return '/';
+    if (novel?.slug) return `/read/s/${novel.slug}/chapter-${ch.number}`;
+    const nid = novel?._id || id;
+    return `/read/${nid}/${ch.number}`;
+  }
+
   function formatContent(content) {
     if (!content) return '';
     return content
@@ -109,8 +141,10 @@ export default function ReadPage() {
       </div>
 
       <div className="read-toolbar">
-        <Link to={novel?.slug ? `/novel/s/${novel.slug}` : `/novel/${id || novel?._id}`} className="read-back-btn">
-          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        <Link to={novelHref} className="read-back-btn">
+          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
           <span>{novel?.title || 'Back'}</span>
         </Link>
 
@@ -130,13 +164,14 @@ export default function ReadPage() {
             <button onClick={() => changeFontSize(1)}>A+</button>
           </div>
           <button className="toc-btn" onClick={() => setShowToc(!showToc)} title="Table of Contents">
-            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
           </button>
           <span className="read-progress-text">{progress}%</span>
         </div>
       </div>
 
-      {/* TOC Drawer */}
       {showToc && (
         <div className="toc-drawer">
           <div className="toc-header">
@@ -145,9 +180,12 @@ export default function ReadPage() {
           </div>
           <div className="toc-list">
             {sortedChapters.map(ch => (
-              <Link key={ch._id} to={novel?.slug ? `/read/s/${novel.slug}/chapter-${ch.number}` : `/read/${novel?._id}/${ch.number}`}
+              <Link
+                key={ch._id}
+                to={chapterHref(ch)}
                 className={`toc-item ${ch.number === num ? 'active' : ''}`}
-                onClick={() => setShowToc(false)}>
+                onClick={() => setShowToc(false)}
+              >
                 <span className="toc-num">Ch. {ch.number}</span>
                 <span className="toc-title">{ch.title}</span>
               </Link>
@@ -164,16 +202,27 @@ export default function ReadPage() {
           </div>
         )}
 
-        {error && (
+        {!loading && error && (
           <div className="read-error">
-            <div style={{fontSize:'2.5rem', marginBottom:'16px'}}>📭</div>
-            <div style={{marginBottom:'8px', fontWeight:600}}>Could not load chapter</div>
-            <div style={{fontSize:'0.75rem', opacity:0.7, marginBottom:'16px'}}>{error}</div>
-            <Link
-              to={novel?.slug ? `/novel/s/${novel.slug}` : slug ? `/novel/s/${slug}` : `/novel/${id}`}
-              className="btn-secondary"
-              style={{marginTop:'8px', display:'inline-flex'}}
-            >Back to Novel</Link>
+            <div style={{ fontSize: '2.5rem', marginBottom: '16px' }}>📭</div>
+            <div style={{ marginBottom: '8px', fontWeight: 600 }}>Could not load chapter</div>
+            <div style={{ fontSize: '0.75rem', opacity: 0.7, marginBottom: '16px' }}>{error}</div>
+            <Link to={novelHref} className="btn-secondary" style={{ marginTop: '8px', display: 'inline-flex' }}>
+              Back to Novel
+            </Link>
+          </div>
+        )}
+
+        {!loading && !error && !chapter && (
+          <div className="read-error">
+            <div style={{ fontSize: '2.5rem', marginBottom: '16px' }}>📭</div>
+            <div style={{ marginBottom: '8px', fontWeight: 600 }}>Chapter not found</div>
+            <div style={{ fontSize: '0.75rem', opacity: 0.7, marginBottom: '16px' }}>
+              Chapter {num} does not exist for this novel.
+            </div>
+            <Link to={novelHref} className="btn-secondary" style={{ marginTop: '8px', display: 'inline-flex' }}>
+              Back to Novel
+            </Link>
           </div>
         )}
 
@@ -191,7 +240,7 @@ export default function ReadPage() {
               </div>
             </div>
 
-            <AdBanner slot="TOP_AD_SLOT_ID" format="horizontal" style={{margin:'24px 0'}} />
+            <AdBanner slot="TOP_AD_SLOT_ID" format="horizontal" style={{ margin: '24px 0' }} />
 
             <div
               className="reading-content"
@@ -199,7 +248,7 @@ export default function ReadPage() {
               dangerouslySetInnerHTML={{ __html: formatContent(chapter.content) }}
             />
 
-            <AdBanner slot="MID_AD_SLOT_ID" format="rectangle" style={{margin:'32px 0'}} />
+            <AdBanner slot="MID_AD_SLOT_ID" format="rectangle" style={{ margin: '32px 0' }} />
 
             <div className="kofi-reading-cta">
               <div className="kofi-cta-text">
@@ -213,24 +262,30 @@ export default function ReadPage() {
 
             <div className="reading-nav">
               {prevChapter ? (
-                <Link to={novel?.slug ? `/read/s/${novel.slug}/chapter-${prevChapter.number}` : `/read/${novel?._id}/${prevChapter.number}`} className="read-nav-btn prev">
-                  <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                <Link to={chapterHref(prevChapter)} className="read-nav-btn prev">
+                  <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                  </svg>
                   <span>Ch. {prevChapter.number}</span>
                 </Link>
               ) : <div />}
 
-              <Link to={novel?.slug ? `/novel/s/${novel.slug}` : `/novel/${id || novel?._id}`} className="read-nav-toc">
-                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+              <Link to={novelHref} className="read-nav-toc">
+                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+                </svg>
                 Contents
               </Link>
 
               {nextChapter ? (
-                <Link to={novel?.slug ? `/read/s/${novel.slug}/chapter-${nextChapter.number}` : `/read/${novel?._id}/${nextChapter.number}`} className="read-nav-btn next">
+                <Link to={chapterHref(nextChapter)} className="read-nav-btn next">
                   <span>Ch. {nextChapter.number}</span>
-                  <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                  <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                  </svg>
                 </Link>
               ) : (
-                <div className="read-nav-btn next" style={{opacity:0.4, pointerEvents:'none'}}>
+                <div className="read-nav-btn next" style={{ opacity: 0.4, pointerEvents: 'none' }}>
                   <span>Last Chapter</span>
                 </div>
               )}
