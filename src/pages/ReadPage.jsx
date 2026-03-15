@@ -10,9 +10,12 @@ const FONT_SIZES = [13, 15, 16, 17, 18, 19, 20, 22, 24, 26];
 
 
 export default function ReadPage() {
-  const { id, slug, chapterNum } = useParams();
+  const { id, slug, chapterNum, chapterSlug } = useParams();
   const navigate = useNavigate();
-  const num = parseInt(String(chapterNum).replace(/[^0-9]/g, '')) || 1;
+  // chapterSlug comes from slug route: /read/s/:slug/:chapterSlug (e.g. "chapter-5")
+  // chapterNum comes from ID route:   /read/:id/:chapterNum       (e.g. "5")
+  const rawNum = chapterSlug || chapterNum || '1';
+  const num = parseInt(String(rawNum).replace(/[^0-9]/g, '')) || 1;
 
   const [novel, setNovel]       = useState(null);
   const [chapter, setChapter]   = useState(null);
