@@ -79,7 +79,7 @@ export default function NovelPage() {
 
   // Build chapter URL using slug if available
   function chapterUrl(ch) {
-    if (novel?.slug) return `/read/s/${novel.slug}/${ch.number}`;
+    if (novel?.slug) return `/read/s/${novel.slug}/chapter-${ch.number}`;
     return `/read/${novel._id}/${ch.number}`;
   }
 

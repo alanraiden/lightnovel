@@ -33,7 +33,7 @@ export default function App() {
           <Route path="/novel/:id" element={<Layout><NovelPage /></Layout>} />
           <Route path="/novel/s/:slug" element={<Layout><NovelPage /></Layout>} />
           <Route path="/read/:id/:chapterNum" element={<ReadPage />} />
-          <Route path="/read/s/:slug/:chapterNum" element={<ReadPage />} />
+          <Route path="/read/s/:slug/chapter-:chapterNum" element={<ReadPage />} />
           <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
           <Route path="/rankings" element={<Layout><Rankings /></Layout>} />
           <Route path="/genres" element={<Layout><Genres /></Layout>} />

@@ -134,7 +134,7 @@ export default function ReadPage() {
           </div>
           <div className="toc-list">
             {sortedChapters.map(ch => (
-              <Link key={ch._id} to={novel?.slug ? `/read/s/${novel.slug}/${ch.number}` : `/read/${novel?._id}/${ch.number}`}
+              <Link key={ch._id} to={novel?.slug ? `/read/s/${novel.slug}/chapter-${ch.number}` : `/read/${novel?._id}/${ch.number}`}
                 className={`toc-item ${ch.number === num ? 'active' : ''}`}
                 onClick={() => setShowToc(false)}>
                 <span className="toc-num">Ch. {ch.number}</span>
@@ -197,7 +197,7 @@ export default function ReadPage() {
 
             <div className="reading-nav">
               {prevChapter ? (
-                <Link to={novel?.slug ? `/read/s/${novel.slug}/${prevChapter.number}` : `/read/${novel?._id}/${prevChapter.number}`} className="read-nav-btn prev">
+                <Link to={novel?.slug ? `/read/s/${novel.slug}/chapter-${prevChapter.number}` : `/read/${novel?._id}/${prevChapter.number}`} className="read-nav-btn prev">
                   <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
                   <span>Ch. {prevChapter.number}</span>
                 </Link>
@@ -209,7 +209,7 @@ export default function ReadPage() {
               </Link>
 
               {nextChapter ? (
-                <Link to={novel?.slug ? `/read/s/${novel.slug}/${nextChapter.number}` : `/read/${novel?._id}/${nextChapter.number}`} className="read-nav-btn next">
+                <Link to={novel?.slug ? `/read/s/${novel.slug}/chapter-${nextChapter.number}` : `/read/${novel?._id}/${nextChapter.number}`} className="read-nav-btn next">
                   <span>Ch. {nextChapter.number}</span>
                   <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                 </Link>
