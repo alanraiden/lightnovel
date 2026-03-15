@@ -1,19 +1,13 @@
 import { useEffect, useRef } from 'react';
 
 /**
- * AdBanner — reusable Google AdSense unit
+ * AdBanner — Google AdSense unit
  *
- * Props:
- *   slot      — your ad slot ID from AdSense (e.g. "1234567890")
- *   format    — "auto" | "rectangle" | "horizontal" | "vertical" (default: "auto")
- *   style     — optional inline style overrides
- *
- * Before this works:
- *   1. Replace ca-pub-XXXXXXXXXXXXXXXX in index.html with your real publisher ID
- *   2. Replace the slot prop with your real ad slot ID from AdSense dashboard
- *   3. Google must approve your site first (usually 1-3 days after applying)
+ * Slots:
+ *   "8630276662"  → Top banner   (auto, full-width-responsive)
+ *   "4207450966"  → Mid / Novel  (fluid, in-article)
  */
-export default function AdBanner({ slot, format = 'auto', style = {} }) {
+export default function AdBanner({ slot, style = {} }) {
   const adRef  = useRef(null);
   const pushed = useRef(false);
 
@@ -28,7 +22,7 @@ export default function AdBanner({ slot, format = 'auto', style = {} }) {
     }
   }, []);
 
-  // Don't render placeholder ads in development
+  // Show placeholder in development
   if (import.meta.env.DEV) {
     return (
       <div style={{
@@ -38,11 +32,29 @@ export default function AdBanner({ slot, format = 'auto', style = {} }) {
         color: 'var(--text-muted)', fontFamily: 'var(--font-mono)',
         fontSize: '0.72rem', ...style
       }}>
-        AdSense — {slot || 'no slot set'} ({format})
+        AdSense — slot {slot}
       </div>
     );
   }
 
+  // Mid / in-article format (slot 4207450966)
+  if (slot === '4207450966') {
+    return (
+      <div style={{ width: '100%', overflow: 'hidden', ...style }}>
+        <ins
+          ref={adRef}
+          className="adsbygoogle"
+          style={{ display: 'block', textAlign: 'center' }}
+          data-ad-layout="in-article"
+          data-ad-format="fluid"
+          data-ad-client="ca-pub-9481193991721439"
+          data-ad-slot="4207450966"
+        />
+      </div>
+    );
+  }
+
+  // Default / top banner format (slot 8630276662)
   return (
     <div style={{ width: '100%', overflow: 'hidden', ...style }}>
       <ins
@@ -51,7 +63,7 @@ export default function AdBanner({ slot, format = 'auto', style = {} }) {
         style={{ display: 'block' }}
         data-ad-client="ca-pub-9481193991721439"
         data-ad-slot={slot}
-        data-ad-format={format}
+        data-ad-format="auto"
         data-full-width-responsive="true"
       />
     </div>

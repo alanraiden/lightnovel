@@ -221,7 +221,7 @@ export default function NovelPage() {
       </div>
 
       <div className="container" style={{padding:'0 0 8px'}}>
-        <AdBanner slot="NOVEL_PAGE_AD_SLOT_ID" format="horizontal"/>
+        <AdBanner slot="4207450966"/>
       </div>
 
       <div className="container" style={{paddingBottom:'80px'}}>
