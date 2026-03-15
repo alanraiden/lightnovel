@@ -190,7 +190,7 @@ export default function ReadPage() {
               </div>
             </div>
 
-            <AdBanner slot="TOP_AD_SLOT_ID" format="horizontal" style={{margin:'24px 0'}} />
+            <AdBanner slot="8630276662" style={{margin:'24px 0'}} />
 
             <div
               className="reading-content"
@@ -198,7 +198,7 @@ export default function ReadPage() {
               dangerouslySetInnerHTML={{ __html: formatContent(chapter.content) }}
             />
 
-            <AdBanner slot="MID_AD_SLOT_ID" format="rectangle" style={{margin:'32px 0'}} />
+            <AdBanner slot="4207450966" style={{margin:'32px 0'}} />
 
             <div className="kofi-reading-cta">
               <div className="kofi-cta-text">
