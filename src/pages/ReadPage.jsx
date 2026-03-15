@@ -32,17 +32,24 @@ export default function ReadPage() {
     async function load() {
       setLoading(true);
       setError('');
+      setChapter(null);
+      setNovel(null);
       try {
+        console.log('Loading - slug:', slug, 'id:', id, 'num:', num);
         const n = slug ? await getNovelBySlug(slug) : await getNovel(id);
-        const novelId = n._id;
-        const chs = await getChapters(novelId);
+        console.log('Novel loaded:', n?.title, n?._id);
         setNovel(n);
+        const [chs, ch] = await Promise.all([
+          getChapters(n._id),
+          getChapter(n._id, num)
+        ]);
+        console.log('Chapter loaded:', ch?.title, 'chapters count:', chs?.length);
         setChapters(chs);
-        const ch = await getChapter(n._id, num);
         setChapter(ch);
         document.title = n.title + ' Chapter ' + num + ' - idenwebstudio';
       } catch (err) {
-        setError('Chapter not found.');
+        console.error('ReadPage load error:', err.message, err);
+        setError(err.message || 'Chapter not found.');
       } finally {
         setLoading(false);
       }
@@ -156,8 +163,13 @@ export default function ReadPage() {
         {error && (
           <div className="read-error">
             <div style={{fontSize:'2.5rem', marginBottom:'16px'}}>📭</div>
-            <div>{error}</div>
-            <Link to={`/novel/${id}`} className="btn-secondary" style={{marginTop:'16px', display:'inline-flex'}}>Back to Novel</Link>
+            <div style={{marginBottom:'8px', fontWeight:600}}>Could not load chapter</div>
+            <div style={{fontSize:'0.75rem', opacity:0.7, marginBottom:'16px'}}>{error}</div>
+            <Link
+              to={novel?.slug ? `/novel/s/${novel.slug}` : slug ? `/novel/s/${slug}` : `/novel/${id}`}
+              className="btn-secondary"
+              style={{marginTop:'8px', display:'inline-flex'}}
+            >Back to Novel</Link>
           </div>
         )}
 

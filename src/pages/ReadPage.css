@@ -29,8 +29,9 @@
 }
 
 .read-page {
-  background: var(--read-bg);
-  color: var(--read-text);
+  background: var(--read-bg, #0f0f18);
+  color: var(--read-text, #d8d8e8);
+  min-height: 100vh;
 }
 
 /* Progress Bar */
