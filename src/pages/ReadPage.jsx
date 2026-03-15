@@ -11,7 +11,7 @@ const FONT_SIZES = [13, 15, 16, 17, 18, 19, 20, 22, 24, 26];
 export default function ReadPage() {
   const { id, slug, chapterNum } = useParams();
   const navigate = useNavigate();
-  const num = parseInt(chapterNum) || 1;
+  const num = parseInt(String(chapterNum).replace(/[^0-9]/g, '')) || 1;
 
   const [novel, setNovel]       = useState(null);
   const [chapter, setChapter]   = useState(null);
@@ -48,9 +48,9 @@ export default function ReadPage() {
       }
     }
     load();
-  }, [id, num]);
+  }, [id, slug, num]);
 
-  useEffect(() => { window.scrollTo(0, 0); }, [id, num]);
+  useEffect(() => { window.scrollTo(0, 0); }, [id, slug, num]);
 
   useEffect(() => {
     const handle = () => {

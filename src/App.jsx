@@ -30,10 +30,10 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Layout><Home /></Layout>} />
           <Route path="/browse" element={<Layout><Browse /></Layout>} />
-          <Route path="/novel/:id" element={<Layout><NovelPage /></Layout>} />
           <Route path="/novel/s/:slug" element={<Layout><NovelPage /></Layout>} />
-          <Route path="/read/:id/:chapterNum" element={<ReadPage />} />
+          <Route path="/novel/:id" element={<Layout><NovelPage /></Layout>} />
           <Route path="/read/s/:slug/chapter-:chapterNum" element={<ReadPage />} />
+          <Route path="/read/:id/:chapterNum" element={<ReadPage />} />
           <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
           <Route path="/rankings" element={<Layout><Rankings /></Layout>} />
           <Route path="/genres" element={<Layout><Genres /></Layout>} />
