@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getNovel, getNovelBySlug, getChapter, getChapters } from '../services/api';
+import '../index.css';
 import './ReadPage.css';
 import AdBanner from '../components/AdBanner';
 
