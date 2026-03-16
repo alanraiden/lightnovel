@@ -5,6 +5,14 @@
       "destination": "https://lightnovelbackend-production.up.railway.app/api/:path*"
     },
     {
+      "source": "/sitemap.xml",
+      "destination": "https://lightnovelbackend-production.up.railway.app/sitemap.xml"
+    },
+    {
+      "source": "/robots.txt",
+      "destination": "https://lightnovelbackend-production.up.railway.app/robots.txt"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
