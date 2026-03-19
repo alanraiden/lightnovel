@@ -28,6 +28,7 @@ function NovelForm({ initial, onSave, onCancel, loading }) {
     title: initial?.title || '',
     description: initial?.description || '',
     status: initial?.status || 'ongoing',
+    visibility: initial?.visibility || 'public',
     genres: initial?.genres || [],
     tags: initial?.tags?.join(', ') || '',
   });
@@ -54,6 +55,7 @@ function NovelForm({ initial, onSave, onCancel, loading }) {
     fd.append('title', form.title);
     fd.append('description', form.description);
     fd.append('status', form.status);
+    fd.append('visibility', form.visibility);
     fd.append('genres', JSON.stringify(form.genres));
     fd.append('tags', JSON.stringify(form.tags.split(',').map(t => t.trim()).filter(Boolean)));
     if (coverFile) fd.append('cover', coverFile);
@@ -72,6 +74,13 @@ function NovelForm({ initial, onSave, onCancel, loading }) {
           <select value={form.status} onChange={e => setForm(f => ({...f, status: e.target.value}))}>
             <option value="ongoing">Ongoing</option>
             <option value="completed">Completed</option>
+          </select>
+        </div>
+        <div className="form-group">
+          <label>Visibility</label>
+          <select value={form.visibility} onChange={e => setForm(f => ({...f, visibility: e.target.value}))}>
+            <option value="public">🌐 Public — visible to all readers</option>
+            <option value="private">🔒 Private — only you can see it</option>
           </select>
         </div>
       </div>
@@ -301,7 +310,7 @@ export default function Dashboard() {
 
   async function loadMyNovels() {
     if (!user) return;
-    try { const data = await getNovels({ authorId: user.id || user._id, limit: 50 }); setNovels(data.novels || []); } catch {}
+    try { const data = await getNovels({ authorId: user.id || user._id, limit: 50, all: true }); setNovels(data.novels || []); } catch {}
   }
 
   if (!token) {
@@ -433,8 +442,8 @@ export default function Dashboard() {
                   <button className="btn-primary" onClick={() => setActiveTab('Upload Novel')}>+ New Novel</button>
                 </div>
                 <div className="novels-table">
-                  <div className="novels-table-header" style={{gridTemplateColumns:'80px 1fr 90px 90px 100px 160px'}}>
-                    <span>Cover</span><span>Title</span><span>Chapters</span><span>Views</span><span>Status</span><span>Actions</span>
+                  <div className="novels-table-header" style={{gridTemplateColumns:'80px 1fr 90px 90px 100px 80px 160px'}}>
+                    <span>Cover</span><span>Title</span><span>Chapters</span><span>Views</span><span>Status</span><span>Visibility</span><span>Actions</span>
                   </div>
                   {novels.length === 0 && (
                     <div style={{padding:'40px', textAlign:'center', color:'var(--text-muted)', fontFamily:'var(--font-mono)', fontSize:'0.82rem'}}>
@@ -442,7 +451,7 @@ export default function Dashboard() {
                     </div>
                   )}
                   {novels.map(n => (
-                    <div key={n._id} className="novels-table-row" style={{gridTemplateColumns:'80px 1fr 90px 90px 100px 160px'}}>
+                    <div key={n._id} className="novels-table-row" style={{gridTemplateColumns:'80px 1fr 90px 90px 100px 80px 160px'}}>
                       <span>
                         <img src={n.cover||'https://via.placeholder.com/40x56/1a1a2e/8b5cf6?text=N'} alt="" style={{width:'40px',height:'56px',objectFit:'cover',borderRadius:'4px'}} onError={e=>{e.target.src='https://via.placeholder.com/40x56/1a1a2e/8b5cf6?text=N';}} />
                       </span>
@@ -450,6 +459,17 @@ export default function Dashboard() {
                       <span className="table-mono">{n.chapterCount}</span>
                       <span className="table-mono">{n.views}</span>
                       <span><span className={'badge badge-'+n.status}>{n.status}</span></span>
+                      <span>
+                        <span style={{
+                          fontFamily:'var(--font-mono)', fontSize:'0.68rem', padding:'3px 8px',
+                          borderRadius:'20px', fontWeight:600,
+                          background: n.visibility === 'private' ? 'rgba(239,68,68,0.12)' : 'rgba(34,197,94,0.12)',
+                          color: n.visibility === 'private' ? '#ef4444' : '#22c55e',
+                          border: `1px solid ${n.visibility === 'private' ? 'rgba(239,68,68,0.3)' : 'rgba(34,197,94,0.3)'}`,
+                        }}>
+                          {n.visibility === 'private' ? '🔒 Private' : '🌐 Public'}
+                        </span>
+                      </span>
                       <span style={{display:'flex', gap:'5px', flexWrap:'wrap'}}>
                         <button className="table-action-btn" onClick={() => { setChapterTarget(n); }}>Chapters</button>
                         <button className="table-action-btn" onClick={() => { setEditTarget(n); setNovelView('edit'); }}>Edit</button>
