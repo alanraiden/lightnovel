@@ -38,6 +38,8 @@ export default function NovelPage() {
   const [userRating, setUserRating] = useState(0);
   const [ratingMsg, setRatingMsg]   = useState('');
   const [chapterSearch, setChapterSearch] = useState('');
+  const [chapterPage,   setChapterPage]   = useState(1);
+  const CHAPTER_LIMIT = 30;
 
   useEffect(() => {
     async function load() {
@@ -75,6 +77,11 @@ export default function NovelPage() {
     !chapterSearch ||
     ch.title.toLowerCase().includes(chapterSearch.toLowerCase()) ||
     String(ch.number).includes(chapterSearch)
+  );
+  const chapterTotalPages = Math.ceil(filteredChapters.length / CHAPTER_LIMIT);
+  const pagedChapters = filteredChapters.slice(
+    (chapterPage - 1) * CHAPTER_LIMIT,
+    chapterPage * CHAPTER_LIMIT
   );
 
   // Build chapter URL using slug if available
@@ -196,7 +203,7 @@ export default function NovelPage() {
               {chapters.length > 10 && (
                 <div className="chapter-search-bar">
                   <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                  <input type="text" placeholder="Search chapters..." value={chapterSearch} onChange={e => setChapterSearch(e.target.value)}/>
+                  <input type="text" placeholder="Search chapters..." value={chapterSearch} onChange={e => { setChapterSearch(e.target.value); setChapterPage(1); }}/>
                 </div>
               )}
               <div className="chapter-list-header">
@@ -207,7 +214,7 @@ export default function NovelPage() {
                   {chapters.length === 0 ? 'No chapters uploaded yet.' : 'No chapters match your search.'}
                 </div>
               )}
-              {filteredChapters.map(ch => (
+              {pagedChapters.map(ch => (
                 <Link key={ch._id} to={chapterUrl(ch)} className="chapter-item">
                   <span className="chapter-num">Ch. {ch.number}</span>
                   <span className="chapter-title-text">{ch.title}</span>
@@ -215,13 +222,41 @@ export default function NovelPage() {
                   <span className="chapter-views">{new Date(ch.createdAt).toLocaleDateString()}</span>
                 </Link>
               ))}
+              {chapterTotalPages > 1 && (
+                <div className="chapter-pagination">
+                  <button
+                    className="ch-page-btn"
+                    disabled={chapterPage === 1}
+                    onClick={() => setChapterPage(p => p - 1)}
+                  >
+                    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+                  </button>
+                  {[...Array(chapterTotalPages)].map((_,i) => (
+                    <button
+                      key={i}
+                      className={`ch-page-btn ${chapterPage === i+1 ? 'active' : ''}`}
+                      onClick={() => setChapterPage(i+1)}
+                    >{i+1}</button>
+                  ))}
+                  <button
+                    className="ch-page-btn"
+                    disabled={chapterPage === chapterTotalPages}
+                    onClick={() => setChapterPage(p => p + 1)}
+                  >
+                    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+                  </button>
+                  <span className="ch-page-info">
+                    {(chapterPage-1)*CHAPTER_LIMIT+1}–{Math.min(chapterPage*CHAPTER_LIMIT, filteredChapters.length)} of {filteredChapters.length}
+                  </span>
+                </div>
+              )}
             </div>
           )}
         </main>
       </div>
 
       <div className="container" style={{padding:'0 0 8px'}}>
-        <AdBanner slot="4207450966"/>
+        <AdBanner slot="NOVEL_PAGE_AD_SLOT_ID" format="horizontal"/>
       </div>
 
       <div className="container" style={{paddingBottom:'80px'}}>

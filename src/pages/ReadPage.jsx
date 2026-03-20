@@ -4,6 +4,7 @@ import { getNovel, getNovelBySlug, getChapter, getChapters } from '../services/a
 import '../index.css';
 import './ReadPage.css';
 import AdBanner from '../components/AdBanner';
+import CommentSection from '../components/CommentSection';
 
 const FONT_SIZES = [13, 15, 16, 17, 18, 19, 20, 22, 24, 26];
 
@@ -50,23 +51,6 @@ export default function ReadPage() {
         setChapters(chs);
         setChapter(ch);
         document.title = n.title + ' Chapter ' + num + ' - idenwebstudio';
-
-        // Save to reading history for "Continue Reading" on home page
-        try {
-          const READING_KEY = 'ns_reading_history';
-          const history = JSON.parse(localStorage.getItem(READING_KEY) || '[]');
-          const entry = {
-            novelId:      n._id,
-            novelSlug:    n.slug || null,
-            title:        n.title,
-            cover:        n.cover || '',
-            chapterNum:   num,
-            totalChapters: chs.length,
-            readAt:       Date.now(),
-          };
-          const filtered = history.filter(h => h.novelId !== n._id);
-          localStorage.setItem(READING_KEY, JSON.stringify([entry, ...filtered].slice(0, 10)));
-        } catch {}
       } catch (err) {
         console.error('ReadPage load error:', err.message, err);
         setError(err.message || 'Chapter not found.');
@@ -251,6 +235,13 @@ export default function ReadPage() {
                 </div>
               )}
             </div>
+
+            {/* Comments */}
+            {novel && (
+              <div className="read-comments">
+                <CommentSection novelId={novel._id}/>
+              </div>
+            )}
           </>
         )}
       </div>

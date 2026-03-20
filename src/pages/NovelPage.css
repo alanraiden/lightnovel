@@ -349,3 +349,43 @@
   animation: shimmer 1.5s infinite;
   border-radius: 4px;
 }
+
+/* ── Chapter Pagination ──────────────────────────────────────────────────── */
+.chapter-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 16px 0 8px;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.ch-page-btn {
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+.ch-page-btn:hover:not(:disabled) { border-color: var(--accent-purple); color: var(--text-primary); }
+.ch-page-btn.active { background: var(--accent-purple); border-color: var(--accent-purple); color: white; }
+.ch-page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.ch-page-info {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-left: 8px;
+}
+
+/* ── Read comments section ───────────────────────────────────────────────── */
+.read-comments {
+  margin-top: 48px;
+  padding-top: 40px;
+  border-top: 1px solid var(--read-border, rgba(255,255,255,0.06));
+}
