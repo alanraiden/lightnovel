@@ -231,8 +231,8 @@ export default function Home() {
           if (!seen.has(n._id) && feat.length < 9) { seen.add(n._id); feat.push(n); }
         }
         setFeatured(feat);
-        setTrending(trendNovels.slice(0, 4));
-        setTopRated(ratedNovels.slice(0, 4));
+        setTrending(trendNovels.slice(0, 9));
+        setTopRated(ratedNovels.slice(0, 9));
         setLatest(newNovels.slice(0, 6));
         setRecent(newNovels.slice(0, 4));
       } catch (err) {
