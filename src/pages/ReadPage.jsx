@@ -47,7 +47,8 @@ export default function ReadPage() {
           getChapters(n._id),
           getChapter(n._id, num)
         ]);
-        console.log('Chapter loaded:', ch?.title, 'chapters count:', chs?.length);\n        setChapters(chs);
+        console.log('Chapter loaded:', ch?.title, 'chapters count:', chs?.length);
+        setChapters(chs);
         setChapter(ch);
         document.title = n.title + ' Chapter ' + num + ' - idenwebstudio';
 
