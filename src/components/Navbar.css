@@ -498,3 +498,17 @@
   background: rgba(255,107,43,0.08); border: 1px solid rgba(255,107,43,0.2);
   border-radius: 6px; padding: 7px 10px; text-align: center; width: 100%;
 }
+
+/* ── Mobile navbar improvements ─────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .navbar-inner { height: 56px; gap: 12px; padding: 0 16px; }
+  .logo-text { font-size: 0.95rem; }
+  .logo-icon { width: 30px; height: 30px; }
+  .kofi-btn { padding: 6px 10px; }
+  .sign-in-btn { padding: 6px 10px; font-size: 0.68rem; }
+  .mobile-menu { padding: 12px 0; }
+  .mobile-nav-link { padding: 13px 4px; font-size: 0.9rem; }
+  .login-modal { padding: 28px 20px 20px; border-radius: 16px; }
+  .modal-backdrop { padding: 12px; align-items: flex-end; }
+  .login-modal { max-height: 95vh; }
+}

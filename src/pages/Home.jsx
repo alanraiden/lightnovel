@@ -1,4 +1,23 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+
+const READING_KEY = 'ns_reading_history';
+
+function getReadingHistory() {
+  try {
+    return JSON.parse(localStorage.getItem(READING_KEY) || '[]');
+  } catch { return []; }
+}
+
+function useIsMobile() {
+  const [mobile, setMobile] = useState(() => window.innerWidth <= 600);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 600px)');
+    const handler = (e) => setMobile(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+  return mobile;
+}
 import { Link } from 'react-router-dom';
 import NovelCard from '../components/NovelCard';
 import { getNovels } from '../services/api';
@@ -32,31 +51,190 @@ function NovelCardSkeleton() {
   );
 }
 
+function HeroSlider({ novels, loading }) {
+  const [current, setCurrent]   = useState(0);
+  const [animating, setAnimating] = useState(false);
+  const timerRef    = useRef(null);
+  const touchStartX = useRef(null);
+
+  const goTo = useCallback((idx) => {
+    if (animating) return;
+    setAnimating(true);
+    setCurrent(idx);
+    setTimeout(() => setAnimating(false), 500);
+  }, [animating]);
+
+  const next = useCallback(() => {
+    if (!novels.length) return;
+    goTo((current + 1) % novels.length);
+  }, [current, novels.length, goTo]);
+
+  const prev = useCallback(() => {
+    if (!novels.length) return;
+    goTo((current - 1 + novels.length) % novels.length);
+  }, [current, novels.length, goTo]);
+
+  useEffect(() => {
+    if (!novels.length) return;
+    // Disable auto-slide on mobile (touch devices)
+    if (window.matchMedia('(max-width: 600px)').matches) return;
+    timerRef.current = setInterval(next, 5000);
+    return () => clearInterval(timerRef.current);
+  }, [next, novels.length]);
+
+  const pause  = () => clearInterval(timerRef.current);
+  const resume = () => {
+    if (window.matchMedia('(max-width: 600px)').matches) return;
+    timerRef.current = setInterval(next, 5000);
+  };
+
+  const onTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; pause(); };
+  const onTouchEnd   = (e) => {
+    if (touchStartX.current === null) return;
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) diff > 0 ? next() : prev();
+    touchStartX.current = null;
+    resume();
+  };
+
+  if (loading) {
+    return (
+      <section className="hero">
+        <div className="hero-bg-art active">
+          <div style={{width:'100%',height:'100%',background:'var(--bg-secondary)'}}/>
+          <div className="hero-bg-overlay"/>
+        </div>
+        <div className="container hero-content">
+          <div className="hero-skeleton">
+            <div className="skeleton-line" style={{width:'30%',height:'0.8rem',marginBottom:'20px',borderRadius:'100px'}}/>
+            <div className="skeleton-line" style={{width:'65%',height:'2.5rem',marginBottom:'16px'}}/>
+            <div className="skeleton-line" style={{width:'40%',marginBottom:'12px'}}/>
+            <div className="skeleton-line" style={{width:'85%',marginBottom:'8px'}}/>
+            <div className="skeleton-line" style={{width:'70%',marginBottom:'28px'}}/>
+            <div style={{display:'flex',gap:'12px'}}>
+              <div className="skeleton-line" style={{width:'130px',height:'42px',borderRadius:'8px'}}/>
+              <div className="skeleton-line" style={{width:'110px',height:'42px',borderRadius:'8px'}}/>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (!novels.length) return null;
+  const hero = novels[current];
+
+  return (
+    <section
+      className="hero hero-slider"
+      onMouseEnter={pause}
+      onMouseLeave={resume}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+    >
+      {novels.map((n, i) => (
+        <div key={n._id} className={`hero-bg-art ${i === current ? 'active' : ''}`}>
+          <img src={n.cover || PLACEHOLDER} alt="" aria-hidden="true" loading={i === 0 ? "eager" : "lazy"} fetchpriority={i === 0 ? "high" : "low"}/>
+          <div className="hero-bg-overlay"/>
+        </div>
+      ))}
+
+      <div className={`container hero-content ${animating ? 'hero-fade' : ''}`}>
+        <div className="hero-badge">
+          <span className="hero-badge-dot"/>
+          Featured Novel
+        </div>
+        <h1 className="hero-title">{hero.title}</h1>
+        <div className="hero-meta">
+          <span className="hero-author">by {hero.author}</span>
+          <StarRating rating={hero.rating}/>
+          <div className="hero-stats">
+            <span>{hero.chapterCount} Chapters</span>
+            <span className="hero-stat-sep">·</span>
+            <span>{hero.views?.toLocaleString()} Views</span>
+            <span className="hero-stat-sep">·</span>
+            <span className={`badge badge-${hero.status}`}>{hero.status}</span>
+          </div>
+        </div>
+        <div className="hero-genres">
+          {(hero.genres || []).map(g => (
+            <span key={g} className="hero-genre-tag">{g}</span>
+          ))}
+        </div>
+        <p className="hero-description">{hero.description}</p>
+        <div className="hero-actions">
+          <Link to={hero.slug ? `/novel/s/${hero.slug}` : `/novel/${hero._id}`} className="btn-primary">
+            <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            Start Reading
+          </Link>
+          <Link to={hero.slug ? `/novel/s/${hero.slug}` : `/novel/${hero._id}`} className="btn-secondary">View Details</Link>
+        </div>
+      </div>
+
+      <div className="hero-cover-showcase">
+        <div className="cover-float">
+          <img src={hero.cover || PLACEHOLDER} alt={hero.title} onError={e => { e.target.src = PLACEHOLDER; }}/>
+          <div className="cover-glow"/>
+        </div>
+      </div>
+
+      {novels.length > 1 && (
+        <>
+          <button className="hero-arrow hero-arrow-prev" onClick={prev} aria-label="Previous">
+            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <button className="hero-arrow hero-arrow-next" onClick={next} aria-label="Next">
+            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
+          <div className="hero-dots">
+            {novels.map((_, i) => (
+              <button key={i} className={`hero-dot ${i === current ? 'active' : ''}`} onClick={() => goTo(i)} aria-label={`Slide ${i+1}`}/>
+            ))}
+          </div>
+
+        </>
+      )}
+    </section>
+  );
+}
+
 export default function Home() {
-  const [trending, setTrending]       = useState([]);
-  const [topRated, setTopRated]       = useState([]);
-  const [latest, setLatest]           = useState([]);
+  const [continueReading, setContinue] = useState([]);
+  const isMobile = useIsMobile();
+  const [featured,      setFeatured]  = useState([]);
+  const [trending,      setTrending]  = useState([]);
+  const [topRated,      setTopRated]  = useState([]);
+  const [latest,        setLatest]    = useState([]);
   const [recentlyAdded, setRecent]    = useState([]);
-  const [hero, setHero]               = useState(null);
-  const [loading, setLoading]         = useState(true);
+  const [loading,       setLoading]   = useState(true);
+
+  useEffect(() => {
+    const history = getReadingHistory();
+    setContinue(history.slice(0, 5));
+  }, []);
 
   useEffect(() => {
     async function load() {
       try {
         const [byViews, byRating, byNew] = await Promise.all([
-          getNovels({ sort: 'views',  limit: 4 }),
-          getNovels({ sort: 'rating', limit: 4 }),
+          getNovels({ sort: 'views',  limit: 9 }),
+          getNovels({ sort: 'rating', limit: 9 }),
           getNovels({ sort: 'new',    limit: 6 }),
         ]);
-        const trendNovels  = byViews.novels  || [];
-        const ratedNovels  = byRating.novels || [];
-        const newNovels    = byNew.novels    || [];
+        const trendNovels = byViews.novels  || [];
+        const ratedNovels = byRating.novels || [];
+        const newNovels   = byNew.novels    || [];
 
-        setTrending(trendNovels);
-        setTopRated(ratedNovels);
+        const seen = new Set();
+        const feat = [];
+        for (const n of [...ratedNovels, ...trendNovels]) {
+          if (!seen.has(n._id) && feat.length < 9) { seen.add(n._id); feat.push(n); }
+        }
+        setFeatured(feat);
+        setTrending(trendNovels.slice(0, 4));
+        setTopRated(ratedNovels.slice(0, 4));
         setLatest(newNovels.slice(0, 6));
         setRecent(newNovels.slice(0, 4));
-        setHero(ratedNovels[0] || trendNovels[0] || newNovels[0] || null);
       } catch (err) {
         console.error(err);
       } finally {
@@ -66,14 +244,14 @@ export default function Home() {
     load();
   }, []);
 
-  if (!loading && !hero) {
+  if (!loading && !featured.length) {
     return (
       <div className="home">
         <div className="home-empty">
           <div className="home-empty-icon">📚</div>
           <h2>No novels yet</h2>
-          <p>Be the first author to publish a novel on NovaSphere!</p>
-          <Link to="/dashboard" className="btn-primary" style={{display:'inline-flex', marginTop:'16px'}}>
+          <p>Be the first to publish a novel on idenwebstudio!</p>
+          <Link to="/dashboard" className="btn-primary" style={{display:'inline-flex',marginTop:'16px'}}>
             Go to Dashboard
           </Link>
         </div>
@@ -83,74 +261,49 @@ export default function Home() {
 
   return (
     <div className="home">
-      {/* Hero */}
-      <section className="hero">
-        <div className="hero-bg-art">
-          <img src={hero?.cover || PLACEHOLDER} alt="" aria-hidden="true" />
-          <div className="hero-bg-overlay" />
-        </div>
-        <div className="container hero-content">
-          <div className="hero-badge">
-            <span className="hero-badge-dot" />
-            Featured Novel
-          </div>
-          {loading ? (
-            <div className="hero-skeleton">
-              <div className="skeleton-line" style={{width:'60%', height:'2.5rem', marginBottom:'16px'}} />
-              <div className="skeleton-line" style={{width:'40%', marginBottom:'12px'}} />
-              <div className="skeleton-line" style={{width:'80%'}} />
-            </div>
-          ) : hero ? (
-            <>
-              <h1 className="hero-title">{hero.title}</h1>
-              <div className="hero-meta">
-                <span className="hero-author">by {hero.author}</span>
-                <StarRating rating={hero.rating} />
-                <div className="hero-stats">
-                  <span>{hero.chapterCount} Chapters</span>
-                  <span className="hero-stat-sep">·</span>
-                  <span>{hero.views?.toLocaleString()} Views</span>
-                  <span className="hero-stat-sep">·</span>
-                  <span className={`badge badge-${hero.status}`}>{hero.status}</span>
-                </div>
-              </div>
-              <div className="hero-genres">
-                {(hero.genres || []).map(g => (
-                  <span key={g} className="hero-genre-tag">{g}</span>
-                ))}
-              </div>
-              <p className="hero-description">{hero.description}</p>
-              <div className="hero-actions">
-                <Link to={`/read/${hero._id}/1`} className="btn-primary">
-                  <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                  Start Reading
-                </Link>
-                <Link to={`/novel/${hero._id}`} className="btn-secondary">View Details</Link>
-              </div>
-            </>
-          ) : null}
-        </div>
-        {hero && (
-          <div className="hero-cover-showcase">
-            <div className="cover-float">
-              <img src={hero.cover || PLACEHOLDER} alt={hero.title}
-                onError={e => { e.target.src = PLACEHOLDER; }} />
-              <div className="cover-glow" />
-            </div>
-          </div>
-        )}
-      </section>
+      <HeroSlider novels={featured} loading={loading}/>
 
-      {/* Sections */}
       <div className="container home-sections">
+
+        {/* Continue Reading */}
+        {continueReading.length > 0 && (
+          <section className="home-section continue-section">
+            <div className="section-title">
+              <span>📖</span> Continue Reading
+            </div>
+            <div className="continue-list">
+              {continueReading.map(item => (
+                <Link
+                  key={item.novelId}
+                  to={item.novelSlug ? `/read/s/${item.novelSlug}/chapter-${item.chapterNum}` : `/read/${item.novelId}/${item.chapterNum}`}
+                  className="continue-card"
+                >
+                  <img src={item.cover || PLACEHOLDER} alt={item.title} className="continue-cover"
+                    onError={e => { e.target.src = PLACEHOLDER; }} loading="lazy"/>
+                  <div className="continue-info">
+                    <div className="continue-title">{item.title}</div>
+                    <div className="continue-meta">Chapter {item.chapterNum} of {item.totalChapters}</div>
+                    <div className="continue-progress-bar">
+                      <div className="continue-progress-fill"
+                        style={{width: `${Math.round((item.chapterNum / Math.max(item.totalChapters,1)) * 100)}%`}}/>
+                    </div>
+                  </div>
+                  <div className="continue-btn">
+                    <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         <section className="home-section">
           <div className="section-title">
             <span>🔥</span> Trending <span className="accent">Now</span>
             <Link to="/browse?sort=views" className="section-see-all">See All →</Link>
           </div>
-          <div className="novel-grid novel-grid-4">
-            {loading ? [...Array(4)].map((_,i) => <NovelCardSkeleton key={i} />) : trending.map(n => <NovelCard key={n._id} novel={n} />)}
+          <div className={isMobile ? "scroll-row" : "novel-grid novel-grid-4"}>
+            {loading ? [...Array(4)].map((_,i) => <NovelCardSkeleton key={i}/>) : trending.map(n => <NovelCard key={n._id} novel={n}/>)}
           </div>
         </section>
 
@@ -159,8 +312,8 @@ export default function Home() {
             <span>⭐</span> Top Rated
             <Link to="/rankings" className="section-see-all">See All →</Link>
           </div>
-          <div className="novel-grid novel-grid-4">
-            {loading ? [...Array(4)].map((_,i) => <NovelCardSkeleton key={i} />) : topRated.map((n,i) => <NovelCard key={n._id} novel={n} rank={i+1} />)}
+          <div className={isMobile ? "scroll-row" : "novel-grid novel-grid-4"}>
+            {loading ? [...Array(4)].map((_,i) => <NovelCardSkeleton key={i}/>) : topRated.map((n,i) => <NovelCard key={n._id} novel={n} rank={i+1}/>)}
           </div>
         </section>
 
@@ -174,17 +327,17 @@ export default function Home() {
               {loading
                 ? [...Array(5)].map((_,i) => (
                     <div key={i} className="update-item">
-                      <div className="skeleton-cover" style={{width:'46px', height:'62px', flexShrink:0}} />
+                      <div className="skeleton-cover" style={{width:'46px',height:'62px',flexShrink:0}}/>
                       <div className="skeleton-info" style={{flex:1}}>
-                        <div className="skeleton-line" style={{width:'70%'}} />
-                        <div className="skeleton-line" style={{width:'50%'}} />
+                        <div className="skeleton-line" style={{width:'70%'}}/>
+                        <div className="skeleton-line" style={{width:'50%'}}/>
                       </div>
                     </div>
                   ))
                 : latest.map(n => (
-                    <Link to={`/novel/${n._id}`} key={n._id} className="update-item">
+                    <Link to={n.slug ? `/novel/s/${n.slug}` : `/novel/${n._id}`} key={n._id} className="update-item">
                       <img src={n.cover || PLACEHOLDER} alt={n.title} className="update-cover"
-                        onError={e => { e.target.src = PLACEHOLDER; }} />
+                        onError={e => { e.target.src = PLACEHOLDER; }}/>
                       <div className="update-info">
                         <div className="update-title">{n.title}</div>
                         <div className="update-chapter">
@@ -204,15 +357,14 @@ export default function Home() {
               <span>✨</span> Recently Added
               <Link to="/browse?sort=new" className="section-see-all">See All →</Link>
             </div>
-            <div className="novel-grid novel-grid-2">
+            <div className={isMobile ? "scroll-row" : "novel-grid novel-grid-2"}>
               {loading
-                ? [...Array(4)].map((_,i) => <NovelCardSkeleton key={i} />)
-                : recentlyAdded.map(n => <NovelCard key={n._id} novel={n} />)
+                ? [...Array(4)].map((_,i) => <NovelCardSkeleton key={i}/>)
+                : recentlyAdded.map(n => <NovelCard key={n._id} novel={n}/>)
               }
             </div>
           </section>
         </div>
-
       </div>
     </div>
   );
