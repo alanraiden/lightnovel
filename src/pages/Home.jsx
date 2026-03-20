@@ -317,41 +317,72 @@ export default function Home() {
           </div>
         </section>
 
-        <div className="two-col-sections">
+        {/* Latest Updates — vertical list on desktop, horizontal scroll on mobile */}
+        <div className={isMobile ? "" : "two-col-sections"}>
           <section className="home-section">
             <div className="section-title">
               <span>🕐</span> Latest Updates
               <Link to="/updates" className="section-see-all">See All →</Link>
             </div>
-            <div className="updates-list">
-              {loading
-                ? [...Array(5)].map((_,i) => (
-                    <div key={i} className="update-item">
-                      <div className="skeleton-cover" style={{width:'46px',height:'62px',flexShrink:0}}/>
-                      <div className="skeleton-info" style={{flex:1}}>
-                        <div className="skeleton-line" style={{width:'70%'}}/>
-                        <div className="skeleton-line" style={{width:'50%'}}/>
-                      </div>
-                    </div>
-                  ))
-                : latest.map(n => (
-                    <Link to={n.slug ? `/novel/s/${n.slug}` : `/novel/${n._id}`} key={n._id} className="update-item">
-                      <img src={n.cover || PLACEHOLDER} alt={n.title} className="update-cover"
-                        onError={e => { e.target.src = PLACEHOLDER; }}/>
-                      <div className="update-info">
-                        <div className="update-title">{n.title}</div>
-                        <div className="update-chapter">
-                          {n.chapterCount > 0 ? `${n.chapterCount} chapters` : 'No chapters yet'}
+            {isMobile ? (
+              <div className="scroll-row">
+                {loading
+                  ? [...Array(5)].map((_,i) => (
+                      <div key={i} className="update-item update-item-card">
+                        <div className="skeleton-cover" style={{width:'46px',height:'62px',flexShrink:0}}/>
+                        <div className="skeleton-info" style={{flex:1}}>
+                          <div className="skeleton-line" style={{width:'70%'}}/>
+                          <div className="skeleton-line" style={{width:'50%'}}/>
                         </div>
-                        <div className="update-date">{new Date(n.updatedAt).toLocaleDateString()}</div>
                       </div>
-                      <span className={`badge badge-${n.status}`}>{n.status}</span>
-                    </Link>
-                  ))
-              }
-            </div>
+                    ))
+                  : latest.map(n => (
+                      <Link to={n.slug ? `/novel/s/${n.slug}` : `/novel/${n._id}`} key={n._id} className="update-item update-item-card">
+                        <img src={n.cover || PLACEHOLDER} alt={n.title} className="update-cover"
+                          onError={e => { e.target.src = PLACEHOLDER; }}/>
+                        <div className="update-info">
+                          <div className="update-title">{n.title}</div>
+                          <div className="update-chapter">
+                            {n.chapterCount > 0 ? `${n.chapterCount} chapters` : 'No chapters yet'}
+                          </div>
+                          <div className="update-date">{new Date(n.updatedAt).toLocaleDateString()}</div>
+                        </div>
+                      </Link>
+                    ))
+                }
+              </div>
+            ) : (
+              <div className="updates-list">
+                {loading
+                  ? [...Array(5)].map((_,i) => (
+                      <div key={i} className="update-item">
+                        <div className="skeleton-cover" style={{width:'46px',height:'62px',flexShrink:0}}/>
+                        <div className="skeleton-info" style={{flex:1}}>
+                          <div className="skeleton-line" style={{width:'70%'}}/>
+                          <div className="skeleton-line" style={{width:'50%'}}/>
+                        </div>
+                      </div>
+                    ))
+                  : latest.map(n => (
+                      <Link to={n.slug ? `/novel/s/${n.slug}` : `/novel/${n._id}`} key={n._id} className="update-item">
+                        <img src={n.cover || PLACEHOLDER} alt={n.title} className="update-cover"
+                          onError={e => { e.target.src = PLACEHOLDER; }}/>
+                        <div className="update-info">
+                          <div className="update-title">{n.title}</div>
+                          <div className="update-chapter">
+                            {n.chapterCount > 0 ? `${n.chapterCount} chapters` : 'No chapters yet'}
+                          </div>
+                          <div className="update-date">{new Date(n.updatedAt).toLocaleDateString()}</div>
+                        </div>
+                        <span className={`badge badge-${n.status}`}>{n.status}</span>
+                      </Link>
+                    ))
+                }
+              </div>
+            )}
           </section>
 
+          {/* Recently Added — scroll row on mobile */}
           <section className="home-section">
             <div className="section-title">
               <span>✨</span> Recently Added

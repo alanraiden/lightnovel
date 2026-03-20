@@ -437,3 +437,13 @@
   .continue-meta { font-size: 0.65rem; }
   .scroll-row .novel-card { width: 130px; max-width: 130px; }
 }
+
+/* Update item as a card inside scroll-row on mobile */
+.update-item-card {
+  flex-shrink: 0;
+  width: 220px;
+  scroll-snap-align: start;
+  flex-direction: row;
+  align-items: center;
+}
+.update-item-card .update-info { min-width: 0; }
