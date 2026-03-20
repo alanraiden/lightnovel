@@ -435,3 +435,115 @@
 @media (max-width: 600px) {
   .toc-drawer { width: 100%; }
 }
+
+/* ── You May Also Like ─────────────────────────────────────────────────────── */
+.similar-novels {
+  margin-top: 48px;
+  padding-top: 40px;
+  border-top: 1px solid var(--read-border, rgba(255,255,255,0.06));
+}
+
+.similar-novels-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.similar-novels-label {
+  font-family: 'Cinzel', serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #ff6b2b;
+}
+
+.similar-novels-header::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--read-border, rgba(255,255,255,0.06));
+}
+
+.similar-novels-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.similar-novel-card {
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--read-border, rgba(255,255,255,0.06));
+  transition: all 0.25s ease;
+}
+
+.similar-novel-card:hover {
+  border-color: rgba(139,92,246,0.4);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.3);
+}
+
+.similar-novel-cover {
+  width: 100%;
+  aspect-ratio: 3/4;
+  overflow: hidden;
+}
+
+.similar-novel-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.35s ease;
+}
+
+.similar-novel-card:hover .similar-novel-cover img {
+  transform: scale(1.05);
+}
+
+.similar-novel-info {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.similar-novel-title {
+  font-family: 'Cinzel', serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--read-text, #d8d8e8);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.similar-novel-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.similar-novel-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: rgba(139,92,246,0.12);
+  border: 1px solid rgba(139,92,246,0.25);
+  color: #8b5cf6;
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 600px) {
+  .similar-novels-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
