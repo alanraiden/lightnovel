@@ -260,6 +260,14 @@
 
 /* Mobile: 600px — PHONE OPTIMISED */
 @media (max-width: 600px) {
+  /* Scroll row: match 16px container padding on mobile */
+  .scroll-row {
+    padding-left: 16px;
+    padding-right: 16px;
+    margin-left: -16px;
+    margin-right: -16px;
+    max-width: calc(100% + 32px);
+  }
   /* Hero */
   .hero { min-height: 340px; padding: 48px 0 80px; }
   .hero-title { font-size: 1.45rem; margin-bottom: 10px; }
@@ -309,15 +317,18 @@
   display: flex;
   gap: 14px;
   overflow-x: auto;
-  overflow-y: visible;
+  overflow-y: hidden;
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
   padding-bottom: 12px;
-  padding-left: 16px;
-  padding-right: 16px;
-  margin-left: -16px;
-  margin-right: -16px;
+  /* Match container padding so edges flush perfectly */
+  padding-left: 24px;
+  padding-right: 24px;
+  margin-left: -24px;
+  margin-right: -24px;
   scrollbar-width: none;
+  /* Critical: clip content so it never causes page overflow */
+  max-width: calc(100% + 48px);
 }
 .scroll-row::-webkit-scrollbar { display: none; }
 .scroll-row .novel-card {
