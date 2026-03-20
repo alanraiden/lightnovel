@@ -239,7 +239,7 @@ export default function ReadPage() {
             {/* Comments */}
             {novel && (
               <div className="read-comments">
-                <CommentSection novelId={novel._id}/>
+                <CommentSection novelId={novel._id} chapterNum={num}/>
               </div>
             )}
           </>

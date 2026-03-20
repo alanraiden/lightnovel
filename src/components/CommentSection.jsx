@@ -14,7 +14,7 @@ function timeAgo(date) {
   return new Date(date).toLocaleDateString();
 }
 
-export default function CommentSection({ novelId }) {
+export default function CommentSection({ novelId, chapterNum }) {
   const { user } = useAuth();
   const [comments, setComments]   = useState([]);
   const [total, setTotal]         = useState(0);
@@ -25,12 +25,12 @@ export default function CommentSection({ novelId }) {
   const [error, setError]         = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
-  useEffect(() => { loadComments(1); }, [novelId]);
+  useEffect(() => { loadComments(1); }, [novelId, chapterNum]);
 
   async function loadComments(p = 1) {
     setLoading(true);
     try {
-      const data = await getComments(novelId, p);
+      const data = await getComments(novelId, p, chapterNum);
       if (p === 1) setComments(data.comments);
       else setComments(prev => [...prev, ...data.comments]);
       setTotal(data.total);
@@ -44,7 +44,7 @@ export default function CommentSection({ novelId }) {
     if (!text.trim()) return;
     setPosting(true); setError('');
     try {
-      const comment = await addComment(novelId, text.trim());
+      const comment = await addComment(novelId, text.trim(), chapterNum);
       setComments(prev => [comment, ...prev]);
       setTotal(t => t + 1);
       setText('');
@@ -80,7 +80,8 @@ export default function CommentSection({ novelId }) {
           <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
           </svg>
-          Comments <span className="comment-count">{total}</span>
+          {chapterNum != null ? `Chapter ${chapterNum} Comments` : 'Comments'}
+          <span className="comment-count">{total}</span>
         </h3>
       </div>
 

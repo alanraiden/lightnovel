@@ -50,7 +50,13 @@ export const updateChapter = (novelId, num, data) => req('/novels/' + novelId + 
 export const deleteChapter = (novelId, num)  => req('/novels/' + novelId + '/chapters/' + num, { method: 'DELETE' });
 
 // Comments
-export const getComments    = (novelId, page = 1) => req('/novels/' + novelId + '/comments?page=' + page + '&limit=20');
-export const addComment     = (novelId, text)     => req('/novels/' + novelId + '/comments', { method: 'POST', body: JSON.stringify({ text }) });
+// chapterNum: pass a number for chapter comments, null/undefined for novel-level comments
+export const getComments    = (novelId, page = 1, chapterNum = undefined) => {
+  let url = '/novels/' + novelId + '/comments?page=' + page + '&limit=20';
+  if (chapterNum != null) url += '&chapterNum=' + chapterNum;
+  else url += '&chapterNum=null';
+  return req(url);
+};
+export const addComment     = (novelId, text, chapterNum = undefined)    => req('/novels/' + novelId + '/comments', { method: 'POST', body: JSON.stringify({ text, chapterNum: chapterNum ?? null }) });
 export const deleteComment  = (novelId, commentId)=> req('/novels/' + novelId + '/comments/' + commentId, { method: 'DELETE' });
 export const likeComment    = (novelId, commentId)=> req('/novels/' + novelId + '/comments/' + commentId + '/like', { method: 'POST' });
