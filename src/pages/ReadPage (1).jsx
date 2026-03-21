@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { getNovel, getNovelBySlug, getChapter, getChapters, getNovels } from '../services/api';
+import { getNovel, getNovelBySlug, getChapter, getChapters } from '../services/api';
 import '../index.css';
 import './ReadPage.css';
 import AdBanner from '../components/AdBanner';
@@ -18,12 +18,11 @@ export default function ReadPage() {
   const rawNum = chapterSlug || chapterNum || '1';
   const num = parseInt(String(rawNum).replace(/[^0-9]/g, '')) || 1;
 
-  const [novel,    setNovel]    = useState(null);
-  const [chapter,  setChapter]  = useState(null);
+  const [novel, setNovel]       = useState(null);
+  const [chapter, setChapter]   = useState(null);
   const [chapters, setChapters] = useState([]);
-  const [loading,  setLoading]  = useState(true);
-  const [error,    setError]    = useState('');
-  const [similar,  setSimilar]  = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [error, setError]       = useState('');
 
   const [fontSize, setFontSize] = useState(() => {
     const saved = localStorage.getItem('ns_fontsize');
@@ -52,33 +51,7 @@ export default function ReadPage() {
         console.log('Chapter loaded:', ch?.title, 'chapters count:', chs?.length);
         setChapters(chs);
         setChapter(ch);
-        // title handled by SEO component
-
-        // Save to reading history for Continue Reading on home page
-        try {
-          const READING_KEY = 'ns_reading_history';
-          const history = JSON.parse(localStorage.getItem(READING_KEY) || '[]');
-          const entry = {
-            novelId:      n._id,
-            novelSlug:    n.slug || null,
-            title:        n.title,
-            cover:        n.cover || '',
-            chapterNum:   num,
-            totalChapters: chs.length,
-            readAt:       Date.now(),
-          };
-          const filtered = history.filter(h => h.novelId !== n._id);
-          localStorage.setItem(READING_KEY, JSON.stringify([entry, ...filtered].slice(0, 10)));
-        } catch {}
-
-        // Fetch similar novels by matching genres, exclude current novel
-        if (n.genres && n.genres.length > 0) {
-          try {
-            const res = await getNovels({ genre: n.genres[0], limit: 10 });
-            const others = (res.novels || []).filter(x => x._id !== n._id);
-            setSimilar(others.sort(() => Math.random() - 0.5).slice(0, 4));
-          } catch {}
-        }
+        // title handled by SEO component below
       } catch (err) {
         console.error('ReadPage load error:', err.message, err);
         setError(err.message || 'Chapter not found.');
@@ -228,7 +201,7 @@ export default function ReadPage() {
               </div>
             </div>
 
-            <AdBanner slot="8630276662" style={{margin:'24px 0'}} />
+            <AdBanner slot="TOP_AD_SLOT_ID" format="horizontal" style={{margin:'24px 0'}} />
 
             <div
               className="reading-content"
@@ -236,7 +209,7 @@ export default function ReadPage() {
               dangerouslySetInnerHTML={{ __html: formatContent(chapter.content) }}
             />
 
-            <AdBanner slot="4207450966" style={{margin:'32px 0'}} />
+            <AdBanner slot="MID_AD_SLOT_ID" format="rectangle" style={{margin:'32px 0'}} />
 
             <div className="kofi-reading-cta">
               <div className="kofi-cta-text">
@@ -277,41 +250,6 @@ export default function ReadPage() {
             {novel && (
               <div className="read-comments">
                 <CommentSection novelId={novel._id} chapterNum={num}/>
-              </div>
-            )}
-
-            {/* You May Also Like */}
-            {similar.length > 0 && (
-              <div className="similar-novels">
-                <div className="similar-novels-header">
-                  <span className="similar-novels-label">You May Also Like</span>
-                </div>
-                <div className="similar-novels-grid">
-                  {similar.map(s => (
-                    <a
-                      key={s._id}
-                      href={s.slug ? `/novel/s/${s.slug}` : `/novel/${s._id}`}
-                      className="similar-novel-card"
-                    >
-                      <div className="similar-novel-cover">
-                        <img
-                          src={s.cover || 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=400&h=600&fit=crop'}
-                          alt={s.title}
-                          loading="lazy"
-                          onError={e => { e.target.src = 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=400&h=600&fit=crop'; }}
-                        />
-                      </div>
-                      <div className="similar-novel-info">
-                        <div className="similar-novel-title">{s.title}</div>
-                        <div className="similar-novel-tags">
-                          {(s.genres || []).slice(0, 2).map(g => (
-                            <span key={g} className="similar-novel-tag">{g}</span>
-                          ))}
-                        </div>
-                      </div>
-                    </a>
-                  ))}
-                </div>
               </div>
             )}
           </>
