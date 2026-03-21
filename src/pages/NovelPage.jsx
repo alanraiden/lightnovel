@@ -4,6 +4,7 @@ import { getNovel, getNovelBySlug, getChapters, rateNovel } from '../services/ap
 import { useAuth } from '../context/AuthContext';
 import CommentSection from '../components/CommentSection';
 import AdBanner from '../components/AdBanner';
+import SEO from '../components/SEO';
 import './NovelPage.css';
 
 const PLACEHOLDER = 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=400&h=600&fit=crop';
@@ -38,8 +39,6 @@ export default function NovelPage() {
   const [userRating, setUserRating] = useState(0);
   const [ratingMsg, setRatingMsg]   = useState('');
   const [chapterSearch, setChapterSearch] = useState('');
-  const [chapterPage,   setChapterPage]   = useState(1);
-  const CHAPTER_LIMIT = 30;
 
   useEffect(() => {
     async function load() {
@@ -51,8 +50,6 @@ export default function NovelPage() {
         setNovel(n);
         setChapters(chs);
         document.title = n.title + ' - idenwebstudio';
-        const desc = document.querySelector('meta[name="description"]');
-        if (desc) desc.setAttribute('content', n.description?.slice(0, 160) || n.title);
       } catch {
         navigate('/');
       } finally {
@@ -77,11 +74,6 @@ export default function NovelPage() {
     !chapterSearch ||
     ch.title.toLowerCase().includes(chapterSearch.toLowerCase()) ||
     String(ch.number).includes(chapterSearch)
-  );
-  const chapterTotalPages = Math.ceil(filteredChapters.length / CHAPTER_LIMIT);
-  const pagedChapters = filteredChapters.slice(
-    (chapterPage - 1) * CHAPTER_LIMIT,
-    chapterPage * CHAPTER_LIMIT
   );
 
   // Build chapter URL using slug if available
@@ -111,8 +103,20 @@ export default function NovelPage() {
   if (!novel) return null;
   const firstChapter = chapters.length > 0 ? chapters[0] : null;
 
+  const novelUrl  = novel?.slug ? `/novel/s/${novel.slug}` : `/novel/${novel?._id}`;
+  const novelDesc = novel?.description
+    ? novel.description.slice(0, 155)
+    : `Read ${novel?.title} by ${novel?.author} on idenwebstudio. ${novel?.chapterCount || 0} chapters available.`;
+
   return (
     <div className="novel-page">
+      <SEO
+        title={novel?.title}
+        description={novelDesc}
+        image={novel?.cover || undefined}
+        url={novelUrl}
+        type="article"
+      />
       <div className="novel-banner">
         <img src={novel.cover || PLACEHOLDER} alt="" className="novel-banner-bg"
           onError={e => { e.target.src = PLACEHOLDER; }}/>
@@ -203,7 +207,7 @@ export default function NovelPage() {
               {chapters.length > 10 && (
                 <div className="chapter-search-bar">
                   <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                  <input type="text" placeholder="Search chapters..." value={chapterSearch} onChange={e => { setChapterSearch(e.target.value); setChapterPage(1); }}/>
+                  <input type="text" placeholder="Search chapters..." value={chapterSearch} onChange={e => setChapterSearch(e.target.value)}/>
                 </div>
               )}
               <div className="chapter-list-header">
@@ -214,7 +218,7 @@ export default function NovelPage() {
                   {chapters.length === 0 ? 'No chapters uploaded yet.' : 'No chapters match your search.'}
                 </div>
               )}
-              {pagedChapters.map(ch => (
+              {filteredChapters.map(ch => (
                 <Link key={ch._id} to={chapterUrl(ch)} className="chapter-item">
                   <span className="chapter-num">Ch. {ch.number}</span>
                   <span className="chapter-title-text">{ch.title}</span>
@@ -222,34 +226,6 @@ export default function NovelPage() {
                   <span className="chapter-views">{new Date(ch.createdAt).toLocaleDateString()}</span>
                 </Link>
               ))}
-              {chapterTotalPages > 1 && (
-                <div className="chapter-pagination">
-                  <button
-                    className="ch-page-btn"
-                    disabled={chapterPage === 1}
-                    onClick={() => setChapterPage(p => p - 1)}
-                  >
-                    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
-                  </button>
-                  {[...Array(chapterTotalPages)].map((_,i) => (
-                    <button
-                      key={i}
-                      className={`ch-page-btn ${chapterPage === i+1 ? 'active' : ''}`}
-                      onClick={() => setChapterPage(i+1)}
-                    >{i+1}</button>
-                  ))}
-                  <button
-                    className="ch-page-btn"
-                    disabled={chapterPage === chapterTotalPages}
-                    onClick={() => setChapterPage(p => p + 1)}
-                  >
-                    <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
-                  </button>
-                  <span className="ch-page-info">
-                    {(chapterPage-1)*CHAPTER_LIMIT+1}–{Math.min(chapterPage*CHAPTER_LIMIT, filteredChapters.length)} of {filteredChapters.length}
-                  </span>
-                </div>
-              )}
             </div>
           )}
         </main>

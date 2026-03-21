@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import NovelCard from '../components/NovelCard';
 import { getNovels } from '../services/api';
+import SEO from '../components/SEO';
 import './Browse.css';
 
 const GENRES = ['Action','Adventure','Comedy','Drama','Fantasy','Historical','Horror','Isekai','Martial Arts','Mecha','Mystery','Philosophical','Romance','Sci-Fi','System','Wuxia','Xianxia','Psychological'];
@@ -57,6 +58,13 @@ export default function Browse() {
 
   return (
     <div className="browse-page">
+      <SEO
+        title={genre ? `${genre} Novels` : sort === 'new' ? 'New Novels' : sort === 'views' ? 'Most Viewed Novels' : 'Browse Novels'}
+        description={genre
+          ? `Browse ${genre} light novels on idenwebstudio. Read free online with regular chapter updates.`
+          : `Browse all light novels on idenwebstudio. Filter by genre, sort by rating, views or newest. ${total > 0 ? `${total} novels available.` : ''}`}
+        url={`/browse${genre ? `?genre=${encodeURIComponent(genre)}` : ''}`}
+      />
       <div className="container">
 
         <div className="browse-header">
