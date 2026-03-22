@@ -1,7 +1,7 @@
 import { Helmet } from 'react-helmet-async';
 
 const SITE_NAME = 'idenwebstudio';
-const SITE_URL  = 'https://www.idenwebstudio.online';
+const SITE_URL  = 'https://idenwebstudio.online';
 const DEFAULT_DESC = 'Read the latest light novels, web novels and translated fiction for free on idenwebstudio. Regular chapter updates across fantasy, isekai, action, romance and more.';
 const DEFAULT_IMG  = `${SITE_URL}/og-image.jpg`;
 
