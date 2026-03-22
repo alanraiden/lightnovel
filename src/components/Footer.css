@@ -7,7 +7,7 @@
 
 .footer-grid {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr;
+  grid-template-columns: 2fr 1fr 1fr;
   gap: 48px;
   margin-bottom: 48px;
 }
@@ -33,15 +33,15 @@
 .kofi-footer-btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
+  gap: 6px;
+  padding: 8px 14px;
   background: linear-gradient(135deg, #ff5e5b, #e04040);
   color: white;
   border-radius: var(--radius);
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-family: var(--font-display);
   font-weight: 600;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   text-decoration: none;
   transition: var(--transition);
   box-shadow: 0 4px 16px rgba(255,94,91,0.25);
@@ -103,4 +103,35 @@
 @media (max-width: 500px) {
   .footer-grid { grid-template-columns: 1fr; }
   .footer-bottom { flex-direction: column; gap: 8px; text-align: center; }
+}
+
+/* Social buttons row */
+.footer-social {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.discord-footer-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: #5865F2;
+  color: white;
+  border-radius: var(--radius);
+  font-size: 0.75rem;
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  transition: var(--transition);
+  box-shadow: 0 4px 16px rgba(88,101,242,0.25);
+}
+
+.discord-footer-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(88,101,242,0.4);
+  background: #4752c4;
 }
