@@ -217,14 +217,16 @@ export default function Home() {
   useEffect(() => {
     async function load() {
       try {
-        const [byViews, byRating, byNew] = await Promise.all([
-          getNovels({ sort: 'views',  limit: 9 }),
-          getNovels({ sort: 'rating', limit: 9 }),
-          getNovels({ sort: 'new',    limit: 6 }),
+        const [byViews, byRating, byNew, byAdded] = await Promise.all([
+          getNovels({ sort: 'views',  limit: 12 }),
+          getNovels({ sort: 'rating', limit: 12 }),
+          getNovels({ sort: 'new',    limit: 9  }),
+          getNovels({ sort: 'added',  limit: 4  }),
         ]);
         const trendNovels = byViews.novels  || [];
         const ratedNovels = byRating.novels || [];
         const newNovels   = byNew.novels    || [];
+        const addedNovels = byAdded.novels  || [];
 
         const seen = new Set();
         const feat = [];
@@ -232,10 +234,10 @@ export default function Home() {
           if (!seen.has(n._id) && feat.length < 9) { seen.add(n._id); feat.push(n); }
         }
         setFeatured(feat);
-        setTrending(trendNovels.slice(0, 9));
-        setTopRated(ratedNovels.slice(0, 9));
-        setLatest(newNovels.slice(0, 6));
-        setRecent(newNovels.slice(0, 4));
+        setTrending(trendNovels.slice(0, 12));
+        setTopRated(ratedNovels.slice(0, 12));
+        setLatest(newNovels.slice(0, 9));
+        setRecent(addedNovels.slice(0, 4));
       } catch (err) {
         console.error(err);
       } finally {
