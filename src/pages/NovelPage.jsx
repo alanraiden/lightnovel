@@ -40,7 +40,9 @@ export default function NovelPage() {
   const [ratingMsg, setRatingMsg]   = useState('');
   const [chapterSearch, setChapterSearch] = useState('');
   const [chapterPage,   setChapterPage]   = useState(1);
+  const [showAllTags,   setShowAllTags]   = useState(false);
   const CHAPTER_LIMIT = 30;
+  const TAG_LIMIT = 5;
 
   useEffect(() => {
     async function load() {
@@ -171,7 +173,6 @@ export default function NovelPage() {
               <span className={`badge badge-${novel.status}`}>{novel.status}</span>
             </div>
             <h1 className="novel-title">{novel.title}</h1>
-            <div className="novel-author-line">by <span className="novel-author-name">{novel.author}</span></div>
             <div className="novel-stats-row">
               <div className="novel-stat">
                 <div className="novel-stat-value" style={{display:'flex', alignItems:'center', gap:'4px'}}>
@@ -197,19 +198,31 @@ export default function NovelPage() {
             </div>
             {(novel.tags || []).length > 0 && (
               <div className="novel-tags">
-                {novel.tags.map(t => <span key={t} className="genre-tag">{t}</span>)}
+                {(showAllTags ? novel.tags : novel.tags.slice(0, TAG_LIMIT)).map(t => (
+                  <span key={t} className="genre-tag">{t}</span>
+                ))}
+                {novel.tags.length > TAG_LIMIT && (
+                  <button className="tags-toggle-btn" onClick={() => setShowAllTags(s => !s)}>
+                    {showAllTags ? 'Show less' : `+${novel.tags.length - TAG_LIMIT} more`}
+                  </button>
+                )}
               </div>
             )}
           </div>
 
-          <div className="novel-tabs">
-            <button className={`novel-tab ${activeTab === 'about' ? 'active' : ''}`} onClick={() => setActiveTab('about')}>About</button>
-            <button className={`novel-tab ${activeTab === 'chapters' ? 'active' : ''}`} onClick={() => setActiveTab('chapters')}>Chapters ({chapters.length})</button>
+          {/* About — always visible, no tab needed */}
+          <div className="novel-description-block">
+            {novel.description
+              ? novel.description.split(/\n+/).map((line, i) =>
+                  line.trim() ? <p key={i}>{line.trim()}</p> : null
+                )
+              : <p>No description provided.</p>
+            }
           </div>
 
-          {activeTab === 'about' && (
-            <div className="novel-description"><p>{novel.description || 'No description provided.'}</p></div>
-          )}
+          <div className="novel-tabs">
+            <button className={`novel-tab ${activeTab === 'chapters' ? 'active' : ''}`} onClick={() => setActiveTab('chapters')}>Chapters ({chapters.length})</button>
+          </div>
 
           {activeTab === 'chapters' && (
             <div className="chapter-list">

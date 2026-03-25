@@ -32,7 +32,9 @@ export default function ReadPage() {
   const [readMode, setReadMode] = useState(() => localStorage.getItem('ns_readmode') || 'dark');
   const [progress, setProgress] = useState(0);
   const [showToc, setShowToc]   = useState(false);
-  const contentRef = useRef(null);
+  const contentRef  = useRef(null);
+  const touchStartX = useRef(null);
+  const touchStartY = useRef(null);
 
   useEffect(() => {
     async function load() {
@@ -119,6 +121,33 @@ export default function ReadPage() {
   const prevChapter = currentIdx > 0 ? sortedChapters[currentIdx - 1] : null;
   const nextChapter = currentIdx < sortedChapters.length - 1 ? sortedChapters[currentIdx + 1] : null;
 
+  // Swipe left/right to navigate chapters
+  function onTouchStart(e) {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  }
+  function onTouchEnd(e) {
+    if (touchStartX.current === null) return;
+    const dx = touchStartX.current - e.changedTouches[0].clientX;
+    const dy = Math.abs(touchStartY.current - e.changedTouches[0].clientY);
+    // Only trigger if horizontal swipe > 60px and not mostly vertical (scrolling)
+    if (Math.abs(dx) > 60 && Math.abs(dx) > dy * 1.5) {
+      if (dx > 0 && nextChapter) {
+        window.location.href = chapterHref(nextChapter);
+      } else if (dx < 0 && prevChapter) {
+        window.location.href = chapterHref(prevChapter);
+      }
+    }
+    touchStartX.current = null;
+    touchStartY.current = null;
+  }
+
+  function chapterHref(ch) {
+    if (!ch) return '/';
+    if (novel?.slug) return `/read/s/${novel.slug}/chapter-${ch.number}`;
+    return `/read/${novel?._id || id}/${ch.number}`;
+  }
+
   // Format content — preserve paragraph breaks
   function formatContent(content) {
     if (!content) return '';
@@ -131,7 +160,7 @@ export default function ReadPage() {
   }
 
   return (
-    <div className={`read-page read-mode-${readMode}`}>
+    <div className={`read-page read-mode-${readMode}`} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
       {novel && chapter && (
         <SEO
           title={`${novel.title} Chapter ${chapter.number}: ${chapter.title}`}
@@ -220,11 +249,11 @@ export default function ReadPage() {
               <div className="reading-novel-title">{novel?.title}</div>
               <h2 className="reading-chapter-title">Chapter {chapter.number}: {chapter.title}</h2>
               <div className="reading-meta">
-                <span>{novel?.author}</span>
-                <span>·</span>
                 <span>{new Date(chapter.createdAt).toLocaleDateString()}</span>
                 <span>·</span>
                 <span>{(chapter.wordCount || 0).toLocaleString()} words</span>
+                <span>·</span>
+                <span>{(chapter.views || 0).toLocaleString()} views</span>
               </div>
             </div>
 
