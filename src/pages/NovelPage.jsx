@@ -41,8 +41,10 @@ export default function NovelPage() {
   const [chapterSearch, setChapterSearch] = useState('');
   const [chapterPage,   setChapterPage]   = useState(1);
   const [showAllTags,   setShowAllTags]   = useState(false);
+  const [showFullDesc,  setShowFullDesc]  = useState(false);
   const CHAPTER_LIMIT = 30;
   const TAG_LIMIT = 5;
+  const DESC_LIMIT = 300;
 
   useEffect(() => {
     async function load() {
@@ -213,9 +215,23 @@ export default function NovelPage() {
           {/* About — always visible, no tab needed */}
           <div className="novel-description-block">
             {novel.description
-              ? novel.description.split(/\n+/).map((line, i) =>
-                  line.trim() ? <p key={i}>{line.trim()}</p> : null
-                )
+              ? (() => {
+                  const full = novel.description;
+                  const truncated = full.length > DESC_LIMIT && !showFullDesc;
+                  const text = truncated ? full.slice(0, DESC_LIMIT).trimEnd() + '…' : full;
+                  return (
+                    <>
+                      {text.split(/\n+/).map((line, i) =>
+                        line.trim() ? <p key={i}>{line.trim()}</p> : null
+                      )}
+                      {full.length > DESC_LIMIT && (
+                        <button className="tags-toggle-btn desc-toggle-btn" onClick={() => setShowFullDesc(s => !s)}>
+                          {showFullDesc ? 'Show less' : 'Read more'}
+                        </button>
+                      )}
+                    </>
+                  );
+                })()
               : <p>No description provided.</p>
             }
           </div>
