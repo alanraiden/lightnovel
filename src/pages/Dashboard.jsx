@@ -346,6 +346,7 @@ function ChapterManager({ novel, onBack }) {
   const [loading, setLoading]   = useState(false);
   const [confirm, setConfirm]   = useState(null);
   const [msg, setMsg]           = useState('');
+  const [chapterSearch, setChapterSearch] = useState('');
 
   useEffect(() => { loadChapters(); }, [novel._id]);
 
@@ -407,6 +408,28 @@ function ChapterManager({ novel, onBack }) {
 
       {view === 'list' && (
         <div className="novels-table">
+          {/* Chapter search bar */}
+          {chapters.length > 5 && (
+            <div style={{padding:'12px 12px 0', display:'flex', gap:'8px', alignItems:'center'}}>
+              <div style={{position:'relative', flex:1}}>
+                <svg style={{position:'absolute', left:'10px', top:'50%', transform:'translateY(-50%)', opacity:0.4}} width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                <input
+                  type="text"
+                  placeholder="Search chapters…"
+                  value={chapterSearch}
+                  onChange={e => setChapterSearch(e.target.value)}
+                  style={{width:'100%', boxSizing:'border-box', paddingLeft:'30px', paddingRight: chapterSearch ? '28px' : '10px', paddingTop:'7px', paddingBottom:'7px', background:'var(--bg-dark)', border:'1px solid var(--border)', borderRadius:'6px', color:'var(--text-primary)', fontFamily:'var(--font-mono)', fontSize:'0.82rem', outline:'none'}}
+                />
+                {chapterSearch && (
+                  <button onClick={() => setChapterSearch('')} style={{position:'absolute', right:'6px', top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'var(--text-muted)', fontSize:'1rem', lineHeight:1}}>×</button>
+                )}
+              </div>
+              <span style={{fontFamily:'var(--font-mono)', fontSize:'0.78rem', color:'var(--text-muted)', whiteSpace:'nowrap'}}>
+                {chapters.filter(ch => !chapterSearch || ch.title.toLowerCase().includes(chapterSearch.toLowerCase()) || String(ch.number).includes(chapterSearch)).length} / {chapters.length}
+              </span>
+            </div>
+          )}
+
           <div className="novels-table-header" style={{gridTemplateColumns:'80px 1fr 120px 100px 120px'}}>
             <span>No.</span><span>Title</span><span>Date</span><span>Words</span><span>Actions</span>
           </div>
@@ -415,10 +438,14 @@ function ChapterManager({ novel, onBack }) {
               No chapters yet. Upload your first chapter!
             </div>
           )}
-          {chapters.map(ch => (
+          {chapters
+            .filter(ch => !chapterSearch ||
+              ch.title.toLowerCase().includes(chapterSearch.toLowerCase()) ||
+              String(ch.number).includes(chapterSearch))
+            .map(ch => (
             <div key={ch._id} className="novels-table-row" style={{gridTemplateColumns:'80px 1fr 120px 100px 120px'}}>
               <span className="table-mono" style={{color:'var(--accent-orange)'}}>Ch. {ch.number}</span>
-              <span className="novel-table-title">{ch.title}</span>
+              <span className="novel-table-title">{chapterSearch ? highlightMatch(ch.title, chapterSearch) : ch.title}</span>
               <span className="table-mono">{new Date(ch.createdAt).toLocaleDateString()}</span>
               <span className="table-mono">{(ch.wordCount||0).toLocaleString()}w</span>
               <span style={{display:'flex', gap:'6px'}}>
@@ -427,6 +454,12 @@ function ChapterManager({ novel, onBack }) {
               </span>
             </div>
           ))}
+          {chapterSearch && chapters.filter(ch => ch.title.toLowerCase().includes(chapterSearch.toLowerCase()) || String(ch.number).includes(chapterSearch)).length === 0 && (
+            <div style={{padding:'30px', textAlign:'center', color:'var(--text-muted)', fontFamily:'var(--font-mono)', fontSize:'0.82rem'}}>
+              No chapters match "{chapterSearch}".
+              <button onClick={() => setChapterSearch('')} style={{background:'none', border:'none', color:'var(--accent-orange)', cursor:'pointer', fontFamily:'inherit', fontSize:'inherit', marginLeft:'6px'}}>Clear</button>
+            </div>
+          )}
         </div>
       )}
 
@@ -465,6 +498,20 @@ function ChapterManager({ novel, onBack }) {
   );
 }
 
+// ── Highlight search match in text ───────────────────────────────────────────
+function highlightMatch(text, query) {
+  if (!query) return text;
+  const idx = text.toLowerCase().indexOf(query.toLowerCase());
+  if (idx === -1) return text;
+  return (
+    <>
+      {text.slice(0, idx)}
+      <mark style={{background:'rgba(255,165,0,0.35)', color:'inherit', borderRadius:'2px', padding:'0 1px'}}>{text.slice(idx, idx + query.length)}</mark>
+      {text.slice(idx + query.length)}
+    </>
+  );
+}
+
 // ── Main Dashboard ────────────────────────────────────────────────────────────
 const TABS = ['Overview', 'My Novels', 'Upload Novel', 'Analytics'];
 
@@ -479,6 +526,9 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState('');
   const [confirm, setConfirm] = useState(null);
+  const [novelSearch, setNovelSearch] = useState('');
+  const [novelFilter, setNovelFilter] = useState('all');  // all | ongoing | completed
+  const [novelSort, setNovelSort]     = useState('newest'); // newest | title | chapters | views
 
   useEffect(() => {
     if (user) loadMyNovels();
@@ -545,6 +595,22 @@ export default function Dashboard() {
   const totalChapters = novels.reduce((a, n) => a + (n.chapterCount || 0), 0);
   const totalViews = novels.reduce((a, n) => a + (n.views || 0), 0);
   const avgRating = novels.length ? (novels.reduce((a, n) => a + n.rating, 0) / novels.length).toFixed(1) : '0.0';
+
+  // ── Filtered + sorted novel list ──────────────────────────────────────────
+  const filteredNovels = novels
+    .filter(n => {
+      const matchSearch = !novelSearch || n.title.toLowerCase().includes(novelSearch.toLowerCase()) ||
+        (n.author || '').toLowerCase().includes(novelSearch.toLowerCase()) ||
+        (n.genres || []).some(g => g.toLowerCase().includes(novelSearch.toLowerCase()));
+      const matchStatus = novelFilter === 'all' || n.status === novelFilter;
+      return matchSearch && matchStatus;
+    })
+    .sort((a, b) => {
+      if (novelSort === 'title')    return a.title.localeCompare(b.title);
+      if (novelSort === 'chapters') return (b.chapterCount || 0) - (a.chapterCount || 0);
+      if (novelSort === 'views')    return (b.views || 0) - (a.views || 0);
+      return new Date(b.updatedAt) - new Date(a.updatedAt); // newest
+    });
 
   return (
     <div className="dashboard-page">
@@ -613,27 +679,90 @@ export default function Dashboard() {
           <div className="dashboard-content">
             {novelView === 'list' && (
               <>
-                <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'24px'}}>
-                  <div className="dashboard-section-title" style={{marginBottom:0}}>Your Novels ({novels.length})</div>
+                {/* ── Search + Filter bar ── */}
+                <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'16px', flexWrap:'wrap', gap:'10px'}}>
+                  <div className="dashboard-section-title" style={{marginBottom:0}}>
+                    Your Novels ({filteredNovels.length}{filteredNovels.length !== novels.length ? ` of ${novels.length}` : ''})
+                  </div>
                   <button className="btn-primary" onClick={() => setActiveTab('Upload Novel')}>+ New Novel</button>
                 </div>
+
+                <div style={{display:'flex', gap:'10px', marginBottom:'20px', flexWrap:'wrap', alignItems:'center'}}>
+                  {/* Search input */}
+                  <div style={{position:'relative', flex:'1', minWidth:'200px'}}>
+                    <svg style={{position:'absolute', left:'10px', top:'50%', transform:'translateY(-50%)', opacity:0.4}} width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                    <input
+                      type="text"
+                      placeholder="Search by title, author, genre…"
+                      value={novelSearch}
+                      onChange={e => setNovelSearch(e.target.value)}
+                      style={{
+                        width:'100%', boxSizing:'border-box',
+                        paddingLeft:'32px', paddingRight: novelSearch ? '32px' : '12px',
+                        paddingTop:'8px', paddingBottom:'8px',
+                        background:'var(--bg-card)', border:'1px solid var(--border)',
+                        borderRadius:'8px', color:'var(--text-primary)',
+                        fontFamily:'var(--font-mono)', fontSize:'0.85rem', outline:'none',
+                      }}
+                    />
+                    {novelSearch && (
+                      <button onClick={() => setNovelSearch('')} style={{position:'absolute', right:'8px', top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'var(--text-muted)', fontSize:'1rem', lineHeight:1, padding:'2px'}}>×</button>
+                    )}
+                  </div>
+
+                  {/* Status filter */}
+                  <select
+                    value={novelFilter}
+                    onChange={e => setNovelFilter(e.target.value)}
+                    style={{padding:'8px 12px', background:'var(--bg-card)', border:'1px solid var(--border)', borderRadius:'8px', color:'var(--text-primary)', fontFamily:'var(--font-mono)', fontSize:'0.82rem', cursor:'pointer', outline:'none'}}
+                  >
+                    <option value="all">All Status</option>
+                    <option value="ongoing">Ongoing</option>
+                    <option value="completed">Completed</option>
+                  </select>
+
+                  {/* Sort */}
+                  <select
+                    value={novelSort}
+                    onChange={e => setNovelSort(e.target.value)}
+                    style={{padding:'8px 12px', background:'var(--bg-card)', border:'1px solid var(--border)', borderRadius:'8px', color:'var(--text-primary)', fontFamily:'var(--font-mono)', fontSize:'0.82rem', cursor:'pointer', outline:'none'}}
+                  >
+                    <option value="newest">Recently Updated</option>
+                    <option value="title">Title A–Z</option>
+                    <option value="chapters">Most Chapters</option>
+                    <option value="views">Most Views</option>
+                  </select>
+                </div>
+
                 <div className="novels-table">
                   <div className="novels-table-header" style={{gridTemplateColumns:'80px 1fr 90px 90px 100px 160px'}}>
                     <span>Cover</span><span>Title</span><span>Chapters</span><span>Views</span><span>Status</span><span>Actions</span>
                   </div>
-                  {novels.length === 0 && (
+
+                  {filteredNovels.length === 0 && novels.length === 0 && (
                     <div style={{padding:'40px', textAlign:'center', color:'var(--text-muted)', fontFamily:'var(--font-mono)', fontSize:'0.82rem'}}>
                       No novels yet.
                     </div>
                   )}
-                  {novels.map(n => (
+
+                  {filteredNovels.length === 0 && novels.length > 0 && (
+                    <div style={{padding:'40px', textAlign:'center', color:'var(--text-muted)', fontFamily:'var(--font-mono)', fontSize:'0.82rem'}}>
+                      No novels match <strong style={{color:'var(--text-primary)'}}>"{novelSearch}"</strong>
+                      {novelFilter !== 'all' ? ` with status "${novelFilter}"` : ''}.
+                      <button onClick={() => { setNovelSearch(''); setNovelFilter('all'); }} style={{background:'none', border:'none', color:'var(--accent-orange)', cursor:'pointer', fontFamily:'inherit', fontSize:'inherit', marginLeft:'6px'}}>Clear filters</button>
+                    </div>
+                  )}
+
+                  {filteredNovels.map(n => (
                     <div key={n._id} className="novels-table-row" style={{gridTemplateColumns:'80px 1fr 90px 90px 100px 160px'}}>
                       <span>
                         <img src={n.cover||'https://via.placeholder.com/40x56/1a1a2e/8b5cf6?text=N'} alt="" style={{width:'40px',height:'56px',objectFit:'cover',borderRadius:'4px'}} onError={e=>{e.target.src='https://via.placeholder.com/40x56/1a1a2e/8b5cf6?text=N';}} />
                       </span>
-                      <span className="novel-table-title">{n.title}</span>
+                      <span className="novel-table-title">
+                        {novelSearch ? highlightMatch(n.title, novelSearch) : n.title}
+                      </span>
                       <span className="table-mono">{n.chapterCount}</span>
-                      <span className="table-mono">{n.views}</span>
+                      <span className="table-mono">{n.views >= 1000 ? (n.views/1000).toFixed(1)+'K' : n.views}</span>
                       <span><span className={'badge badge-'+n.status}>{n.status}</span></span>
                       <span style={{display:'flex', gap:'5px', flexWrap:'wrap'}}>
                         <button className="table-action-btn" onClick={() => { setChapterTarget(n); }}>Chapters</button>
