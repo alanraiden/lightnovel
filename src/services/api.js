@@ -48,6 +48,8 @@ export const getChapter    = (novelId, num)  => req('/novels/' + novelId + '/cha
 export const createChapter = (novelId, data) => req('/novels/' + novelId + '/chapters', { method: 'POST', body: JSON.stringify(data) });
 export const updateChapter = (novelId, num, data) => req('/novels/' + novelId + '/chapters/' + num, { method: 'PUT', body: JSON.stringify(data) });
 export const deleteChapter = (novelId, num)  => req('/novels/' + novelId + '/chapters/' + num, { method: 'DELETE' });
+export const bulkImportChapters = (novelId, chapters, skipDuplicates = true) =>
+  req('/novels/' + novelId + '/chapters/bulk', { method: 'POST', body: JSON.stringify({ chapters, skipDuplicates }) });
 
 // Comments
 // chapterNum: pass a number for chapter comments, null/undefined for novel-level comments

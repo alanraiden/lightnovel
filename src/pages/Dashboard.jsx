@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getNovels, createNovel, updateNovel, deleteNovel, getChapters, createChapter, updateChapter, deleteChapter } from '../services/api';
+import { getNovels, createNovel, updateNovel, deleteNovel, getChapters, createChapter, updateChapter, deleteChapter, bulkImportChapters } from '../services/api';
 import './Dashboard.css';
 
 const GENRES = ['Action','Adventure','Comedy','Drama','Fantasy','Historical','Horror','Isekai','Martial Arts','Mecha','Mystery','Philosophical','Romance','Sci-Fi','System','Wuxia','Xianxia','Psychological'];
@@ -167,13 +167,185 @@ function ChapterForm({ novelId, initial, onSave, onCancel, loading }) {
 }
 
 // ── Chapter Manager ───────────────────────────────────────────────────────────
+// ── CSV Bulk Import ───────────────────────────────────────────────────────────
+function CsvImporter({ novel, onDone }) {
+  const [file, setFile]           = useState(null);
+  const [preview, setPreview]     = useState([]);
+  const [parseError, setParseError] = useState('');
+  const [skipDups, setSkipDups]   = useState(true);
+  const [loading, setLoading]     = useState(false);
+  const [result, setResult]       = useState(null);
+
+  function parseCSV(text) {
+    // Simple but robust CSV parser: handles quoted fields with embedded commas/newlines
+    const rows = [];
+    let i = 0;
+    while (i < text.length) {
+      const row = [];
+      while (i < text.length) {
+        if (text[i] === '"') {
+          i++; let field = '';
+          while (i < text.length) {
+            if (text[i] === '"' && text[i+1] === '"') { field += '"'; i += 2; }
+            else if (text[i] === '"') { i++; break; }
+            else { field += text[i++]; }
+          }
+          row.push(field);
+        } else {
+          let field = '';
+          while (i < text.length && text[i] !== ',' && text[i] !== '\n' && text[i] !== '\r') {
+            field += text[i++];
+          }
+          row.push(field.trim());
+        }
+        if (i < text.length && text[i] === ',') i++;
+        else break;
+      }
+      while (i < text.length && (text[i] === '\n' || text[i] === '\r')) i++;
+      if (row.some(f => f.length > 0)) rows.push(row);
+    }
+    return rows;
+  }
+
+  function handleFile(e) {
+    const f = e.target.files[0];
+    if (!f) return;
+    setFile(f); setResult(null); setParseError('');
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const rows = parseCSV(ev.target.result);
+        if (rows.length < 2) { setParseError('CSV has no data rows.'); return; }
+        const headers = rows[0].map(h => h.toLowerCase().trim());
+        const chNum   = headers.indexOf('chapter number') !== -1 ? headers.indexOf('chapter number') : headers.indexOf('chapter');
+        const titleI  = headers.indexOf('title');
+        const contentI = headers.indexOf('content');
+        if (chNum === -1 || titleI === -1 || contentI === -1) {
+          setParseError(`Missing required columns. Found: [${rows[0].join(', ')}]. Need: "Chapter Number", "Title", "Content"`);
+          return;
+        }
+        const parsed = rows.slice(1).map(r => ({
+          number:  Number(r[chNum]),
+          title:   r[titleI],
+          content: r[contentI],
+        })).filter(r => r.number > 0 && r.title && r.content);
+        setPreview(parsed);
+      } catch (err) { setParseError('Parse error: ' + err.message); }
+    };
+    reader.readAsText(f);
+  }
+
+  async function handleImport() {
+    if (!preview.length) return;
+    setLoading(true); setResult(null);
+    try {
+      const res = await bulkImportChapters(novel._id, preview, skipDups);
+      setResult(res);
+      onDone();
+    } catch (e) { setResult({ message: 'Error: ' + e.message, created: 0, skipped: 0, errors: [] }); }
+    setLoading(false);
+  }
+
+  return (
+    <div style={{display:'flex', flexDirection:'column', gap:'18px'}}>
+      <div style={{background:'var(--bg-card)', border:'1px solid var(--border)', borderRadius:'10px', padding:'20px'}}>
+        <div style={{fontFamily:'var(--font-display)', fontWeight:600, marginBottom:'8px', fontSize:'0.95rem'}}>📋 CSV Format Required</div>
+        <div style={{fontFamily:'var(--font-mono)', fontSize:'0.78rem', color:'var(--text-muted)', background:'var(--bg-dark)', padding:'10px 14px', borderRadius:'6px', lineHeight:'1.7'}}>
+          Novel,Chapter Number,Title,Content<br/>
+          My Novel,1,Chapter 1 - The Beginning,"Full chapter text here..."<br/>
+          My Novel,2,Chapter 2 - Journey Starts,"More text..."
+        </div>
+        <div style={{fontSize:'0.8rem', color:'var(--text-muted)', marginTop:'8px'}}>
+          Columns needed: <strong>Chapter Number</strong>, <strong>Title</strong>, <strong>Content</strong> (Novel and URL are optional)
+        </div>
+      </div>
+
+      <div
+        style={{border:'2px dashed var(--border)', borderRadius:'10px', padding:'32px', textAlign:'center', cursor:'pointer', transition:'border-color 0.2s'}}
+        onClick={() => document.getElementById('csv-upload-input').click()}
+        onDragOver={e => e.preventDefault()}
+        onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile({ target: { files: [f] } }); }}
+      >
+        <div style={{fontSize:'2rem', marginBottom:'8px'}}>📂</div>
+        <div style={{fontWeight:600, marginBottom:'4px'}}>{file ? file.name : 'Drop CSV here or click to browse'}</div>
+        <div style={{fontSize:'0.8rem', color:'var(--text-muted)'}}>Supports .csv files exported from the scraper</div>
+        <input id="csv-upload-input" type="file" accept=".csv" style={{display:'none'}} onChange={handleFile} />
+      </div>
+
+      {parseError && (
+        <div style={{background:'rgba(255,80,80,0.1)', border:'1px solid rgba(255,80,80,0.3)', borderRadius:'8px', padding:'12px 16px', color:'#ff6b6b', fontSize:'0.85rem'}}>
+          ⚠️ {parseError}
+        </div>
+      )}
+
+      {preview.length > 0 && !parseError && (
+        <>
+          <div style={{display:'flex', alignItems:'center', gap:'12px', flexWrap:'wrap'}}>
+            <div style={{background:'rgba(var(--accent-orange-rgb, 255,165,0),0.12)', border:'1px solid var(--accent-orange)', borderRadius:'8px', padding:'10px 16px', fontSize:'0.88rem'}}>
+              ✅ <strong>{preview.length} chapters</strong> ready to import &nbsp;|&nbsp; Ch.{preview[0]?.number} → Ch.{preview[preview.length-1]?.number}
+            </div>
+            <label style={{display:'flex', alignItems:'center', gap:'8px', fontSize:'0.85rem', cursor:'pointer', userSelect:'none'}}>
+              <input type="checkbox" checked={skipDups} onChange={e => setSkipDups(e.target.checked)} />
+              Skip duplicate chapter numbers
+            </label>
+          </div>
+
+          <div style={{maxHeight:'220px', overflowY:'auto', border:'1px solid var(--border)', borderRadius:'8px'}}>
+            <table style={{width:'100%', borderCollapse:'collapse', fontFamily:'var(--font-mono)', fontSize:'0.78rem'}}>
+              <thead style={{position:'sticky', top:0, background:'var(--bg-card)'}}>
+                <tr>
+                  <th style={{padding:'8px 12px', textAlign:'left', borderBottom:'1px solid var(--border)', color:'var(--text-muted)'}}>Ch#</th>
+                  <th style={{padding:'8px 12px', textAlign:'left', borderBottom:'1px solid var(--border)', color:'var(--text-muted)'}}>Title</th>
+                  <th style={{padding:'8px 12px', textAlign:'left', borderBottom:'1px solid var(--border)', color:'var(--text-muted)'}}>Words</th>
+                </tr>
+              </thead>
+              <tbody>
+                {preview.slice(0, 50).map((ch, i) => (
+                  <tr key={i} style={{borderBottom:'1px solid var(--border)'}}>
+                    <td style={{padding:'6px 12px', color:'var(--accent-orange)'}}>{ch.number}</td>
+                    <td style={{padding:'6px 12px'}}>{ch.title.slice(0, 60)}{ch.title.length > 60 ? '…' : ''}</td>
+                    <td style={{padding:'6px 12px', color:'var(--text-muted)'}}>{ch.content.split(/\s+/).length.toLocaleString()}</td>
+                  </tr>
+                ))}
+                {preview.length > 50 && (
+                  <tr><td colSpan={3} style={{padding:'8px 12px', color:'var(--text-muted)', textAlign:'center'}}>… and {preview.length - 50} more</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <button
+            className="btn-primary"
+            onClick={handleImport}
+            disabled={loading}
+            style={{alignSelf:'flex-start', minWidth:'160px'}}
+          >
+            {loading ? 'Importing…' : `🚀 Import ${preview.length} Chapters`}
+          </button>
+        </>
+      )}
+
+      {result && (
+        <div style={{background: result.created > 0 ? 'rgba(34,197,94,0.1)' : 'rgba(255,80,80,0.1)', border:`1px solid ${result.created > 0 ? 'rgba(34,197,94,0.4)' : 'rgba(255,80,80,0.4)'}`, borderRadius:'8px', padding:'14px 18px'}}>
+          <div style={{fontWeight:600, marginBottom:'6px'}}>{result.message}</div>
+          {result.errors?.length > 0 && (
+            <ul style={{margin:0, paddingLeft:'18px', fontSize:'0.82rem', color:'#ff8888'}}>
+              {result.errors.map((e, i) => <li key={i}>Ch.{e.number}: {e.reason}</li>)}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ChapterManager({ novel, onBack }) {
   const [chapters, setChapters] = useState([]);
-  const [view, setView] = useState('list'); // list | new | edit
+  const [view, setView]         = useState('list'); // list | new | edit | import
   const [editTarget, setEditTarget] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [confirm, setConfirm] = useState(null);
-  const [msg, setMsg] = useState('');
+  const [loading, setLoading]   = useState(false);
+  const [confirm, setConfirm]   = useState(null);
+  const [msg, setMsg]           = useState('');
 
   useEffect(() => { loadChapters(); }, [novel._id]);
 
@@ -221,9 +393,12 @@ function ChapterManager({ novel, onBack }) {
           Back to Novels
         </button>
         <div style={{fontFamily:'var(--font-display)', fontSize:'1rem', fontWeight:600}}>{novel.title}</div>
-        <div style={{marginLeft:'auto'}}>
+        <div style={{marginLeft:'auto', display:'flex', gap:'8px'}}>
           {view === 'list' && (
-            <button className="btn-primary" onClick={() => setView('new')}>+ New Chapter</button>
+            <>
+              <button className="btn-secondary" onClick={() => setView('import')}>📥 Bulk Import CSV</button>
+              <button className="btn-primary" onClick={() => setView('new')}>+ New Chapter</button>
+            </>
           )}
         </div>
       </div>
@@ -253,6 +428,16 @@ function ChapterManager({ novel, onBack }) {
             </div>
           ))}
         </div>
+      )}
+
+      {view === 'import' && (
+        <>
+          <div style={{display:'flex', alignItems:'center', gap:'12px', marginBottom:'16px'}}>
+            <div className="dashboard-section-title" style={{margin:0}}>Bulk Import Chapters — {novel.title}</div>
+            <button className="btn-secondary" style={{marginLeft:'auto'}} onClick={() => setView('list')}>← Back to List</button>
+          </div>
+          <CsvImporter novel={novel} onDone={loadChapters} />
+        </>
       )}
 
       {view === 'new' && (
