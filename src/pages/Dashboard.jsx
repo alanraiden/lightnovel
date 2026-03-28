@@ -132,6 +132,17 @@ function ChapterForm({ novelId, initial, onSave, onCancel, loading }) {
     content: initial?.content || '',
   });
 
+  // Sync form when initial changes (e.g. after full chapter is fetched)
+  useEffect(() => {
+    if (initial) {
+      setForm({
+        number:  initial.number  || '',
+        title:   initial.title   || '',
+        content: initial.content || '',
+      });
+    }
+  }, [initial?._id, initial?.content]);
+
   function handleSubmit(e) {
     e.preventDefault();
     onSave({ number: Number(form.number), title: form.title, content: form.content });
@@ -491,7 +502,7 @@ function ChapterManager({ novel, onBack }) {
       {view === 'edit' && editTarget && (
         <>
           <div className="dashboard-section-title">Edit Chapter {editTarget.number}</div>
-          <ChapterForm novelId={novel._id} initial={editTarget} onSave={handleEdit} onCancel={() => { setView('list'); setEditTarget(null); }} loading={loading} />
+          <ChapterForm key={editTarget._id + '-' + (editTarget.content ? 'full' : 'empty')} novelId={novel._id} initial={editTarget} onSave={handleEdit} onCancel={() => { setView('list'); setEditTarget(null); }} loading={loading} />
         </>
       )}
 
