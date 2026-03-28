@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getNovels, createNovel, updateNovel, deleteNovel, getChapters, createChapter, updateChapter, deleteChapter, bulkImportChapters } from '../services/api';
+import { getNovels, createNovel, updateNovel, deleteNovel, getChapters, getChapter, createChapter, updateChapter, deleteChapter, bulkImportChapters } from '../services/api';
 import './Dashboard.css';
 
 const GENRES = ['Action','Adventure','Comedy','Drama','Fantasy','Historical','Horror','Isekai','Martial Arts','Mecha','Mystery','Philosophical','Romance','Sci-Fi','System','Wuxia','Xianxia','Psychological'];
@@ -449,7 +449,15 @@ function ChapterManager({ novel, onBack }) {
               <span className="table-mono">{new Date(ch.createdAt).toLocaleDateString()}</span>
               <span className="table-mono">{(ch.wordCount||0).toLocaleString()}w</span>
               <span style={{display:'flex', gap:'6px'}}>
-                <button className="table-action-btn" onClick={() => { setEditTarget(ch); setView('edit'); }}>Edit</button>
+                <button className="table-action-btn" onClick={async () => {
+                    try {
+                      const full = await getChapter(novel._id, ch.number);
+                      setEditTarget(full);
+                    } catch {
+                      setEditTarget(ch); // fallback to list version
+                    }
+                    setView('edit');
+                  }}>Edit</button>
                 <button className="table-action-btn danger" onClick={() => setConfirm(ch.number)}>Del</button>
               </span>
             </div>
