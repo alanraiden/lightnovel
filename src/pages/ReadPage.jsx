@@ -381,13 +381,6 @@ export default function ReadPage() {
               )}
             </div>
 
-            {/* Comments */}
-            {novel && (
-              <div className="read-comments">
-                <CommentSection novelId={novel._id} chapterNum={num}/>
-              </div>
-            )}
-
             {/* You May Also Like */}
             {similar.length > 0 && (
               <div className="similar-novels">
@@ -420,6 +413,13 @@ export default function ReadPage() {
                     </a>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* Comments */}
+            {novel && (
+              <div className="read-comments">
+                <CommentSection novelId={novel._id} chapterNum={num}/>
               </div>
             )}
           </>
