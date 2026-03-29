@@ -204,6 +204,9 @@ export default function Home() {
   const isMobile = useIsMobile();
   const [featured,      setFeatured]  = useState([]);
   const [trending,      setTrending]  = useState([]);
+  const [trendTab,      setTrendTab]  = useState('week'); // today | week | month | all
+  const [trendCache,    setTrendCache] = useState({});    // cache per tab
+  const [trendLoading,  setTrendLoading] = useState(false);
   const [topRated,      setTopRated]  = useState([]);
   const [latest,        setLatest]    = useState([]);
   const [recentlyAdded, setRecent]    = useState([]);
@@ -235,6 +238,7 @@ export default function Home() {
         }
         setFeatured(feat);
         setTrending(trendNovels.slice(0, 12));
+        setTrendCache({ all: trendNovels.slice(0, 12) });
         setTopRated(ratedNovels.slice(0, 12));
         setLatest(newNovels.slice(0, 9));
         setRecent(addedNovels.slice(0, 4));
@@ -246,6 +250,22 @@ export default function Home() {
     }
     load();
   }, []);
+
+  async function fetchTrendTab(tab) {
+    if (trendCache[tab]) { setTrending(trendCache[tab]); setTrendTab(tab); return; }
+    setTrendLoading(true);
+    setTrendTab(tab);
+    try {
+      const sinceMap = { today: 1, week: 7, month: 30, all: null };
+      const params = { sort: 'views', limit: 12 };
+      if (sinceMap[tab]) params.since = sinceMap[tab];
+      const res = await getNovels(params);
+      const novels = res.novels || [];
+      setTrending(novels);
+      setTrendCache(prev => ({ ...prev, [tab]: novels }));
+    } catch {}
+    setTrendLoading(false);
+  }
 
   if (!loading && !featured.length) {
     return (
@@ -308,11 +328,25 @@ export default function Home() {
 
         <section className="home-section">
           <div className="section-title">
-            <span>🔥</span> Trending <span className="accent">Now</span>
+            <span>🔥</span> Trending
+            <div className="trend-tabs">
+              {[['today','Today'],['week','This Week'],['month','This Month'],['all','All Time']].map(([key,label]) => (
+                <button
+                  key={key}
+                  className={`trend-tab ${trendTab === key ? 'active' : ''}`}
+                  onClick={() => fetchTrendTab(key)}
+                >{label}</button>
+              ))}
+            </div>
             <Link to="/browse?sort=views" className="section-see-all">See All →</Link>
           </div>
           <div className={isMobile ? "scroll-row" : "novel-grid novel-grid-4"}>
-            {loading ? [...Array(4)].map((_,i) => <NovelCardSkeleton key={i}/>) : trending.map(n => <NovelCard key={n._id} novel={n}/>)}
+            {(loading || trendLoading)
+              ? [...Array(4)].map((_,i) => <NovelCardSkeleton key={i}/>)
+              : trending.length > 0
+                ? trending.map(n => <NovelCard key={n._id} novel={n}/>)
+                : <div style={{color:'var(--text-muted)',fontFamily:'var(--font-mono)',fontSize:'0.82rem',padding:'32px 0'}}>No novels updated in this period yet.</div>
+            }
           </div>
         </section>
 

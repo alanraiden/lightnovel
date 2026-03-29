@@ -44,7 +44,8 @@ export const rateNovel    = (id, rating) => req('/novels/' + id + '/rate', { met
 
 // Chapters
 export const getChapters   = (novelId)       => req('/novels/' + novelId + '/chapters');
-export const getChapter    = (novelId, num)  => req('/novels/' + novelId + '/chapters/' + num);
+export const getChapter        = (novelId, num)  => req('/novels/' + novelId + '/chapters/' + num);
+export const getChapterForEdit = (novelId, num)  => req('/novels/' + novelId + '/chapters/' + num + '/edit');
 export const createChapter = (novelId, data) => req('/novels/' + novelId + '/chapters', { method: 'POST', body: JSON.stringify(data) });
 export const updateChapter = (novelId, num, data) => req('/novels/' + novelId + '/chapters/' + num, { method: 'PUT', body: JSON.stringify(data) });
 export const deleteChapter = (novelId, num)  => req('/novels/' + novelId + '/chapters/' + num, { method: 'DELETE' });

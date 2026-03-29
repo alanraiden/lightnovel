@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getNovels, createNovel, updateNovel, deleteNovel, getChapters, getChapter, createChapter, updateChapter, deleteChapter, bulkImportChapters } from '../services/api';
+import { getNovels, createNovel, updateNovel, deleteNovel, getChapters, getChapterForEdit, createChapter, updateChapter, deleteChapter, bulkImportChapters } from '../services/api';
 import './Dashboard.css';
 
 const GENRES = ['Action','Adventure','Comedy','Drama','Fantasy','Historical','Horror','Isekai','Martial Arts','Mecha','Mystery','Philosophical','Romance','Sci-Fi','System','Wuxia','Xianxia','Psychological'];
@@ -127,12 +127,11 @@ function NovelForm({ initial, onSave, onCancel, loading }) {
 // ── Chapter Form (create / edit) ──────────────────────────────────────────────
 function ChapterForm({ novelId, initial, onSave, onCancel, loading }) {
   const [form, setForm] = useState({
-    number: initial?.number || '',
-    title: initial?.title || '',
+    number:  initial?.number  || '',
+    title:   initial?.title   || '',
     content: initial?.content || '',
   });
 
-  // Sync form when initial changes (e.g. after full chapter is fetched)
   useEffect(() => {
     if (initial) {
       setForm({
@@ -461,13 +460,12 @@ function ChapterManager({ novel, onBack }) {
               <span className="table-mono">{(ch.wordCount||0).toLocaleString()}w</span>
               <span style={{display:'flex', gap:'6px'}}>
                 <button className="table-action-btn" onClick={async () => {
-                    try {
-                      const full = await getChapter(novel._id, ch.number);
-                      setEditTarget(full);
-                    } catch {
-                      setEditTarget(ch); // fallback to list version
-                    }
                     setView('edit');
+                    setEditTarget(ch); // show form immediately with number+title
+                    try {
+                      const full = await getChapterForEdit(novel._id, ch.number);
+                      setEditTarget(full); // update with full content once loaded
+                    } catch { /* keep partial data */ }
                   }}>Edit</button>
                 <button className="table-action-btn danger" onClick={() => setConfirm(ch.number)}>Del</button>
               </span>
@@ -502,7 +500,7 @@ function ChapterManager({ novel, onBack }) {
       {view === 'edit' && editTarget && (
         <>
           <div className="dashboard-section-title">Edit Chapter {editTarget.number}</div>
-          <ChapterForm key={editTarget._id + '-' + (editTarget.content ? 'full' : 'empty')} novelId={novel._id} initial={editTarget} onSave={handleEdit} onCancel={() => { setView('list'); setEditTarget(null); }} loading={loading} />
+          <ChapterForm key={String(editTarget._id) + String(!!editTarget.content)} novelId={novel._id} initial={editTarget} onSave={handleEdit} onCancel={() => { setView('list'); setEditTarget(null); }} loading={loading} />
         </>
       )}
 

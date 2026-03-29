@@ -447,3 +447,40 @@
   align-items: center;
 }
 .update-item-card .update-info { min-width: 0; }
+
+/* ── Trending tabs ───────────────────────────────────────────────────────────── */
+.trend-tabs {
+  display: flex;
+  gap: 2px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 3px;
+  margin-left: 8px;
+}
+
+.trend-tab {
+  padding: 5px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.trend-tab:hover { color: var(--text-primary); background: var(--bg-elevated); }
+.trend-tab.active {
+  background: rgba(255,107,43,0.12);
+  color: var(--accent-orange);
+}
+
+@media (max-width: 600px) {
+  .section-title { flex-wrap: wrap; gap: 8px; }
+  .trend-tabs { order: 3; width: 100%; justify-content: space-between; }
+  .trend-tab { padding: 5px 8px; font-size: 0.66rem; flex: 1; text-align: center; }
+  .section-see-all { order: 2; }
+}
