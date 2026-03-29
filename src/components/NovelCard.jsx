@@ -2,10 +2,17 @@ import { Link } from 'react-router-dom';
 
 const PLACEHOLDER = 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=400&h=600&fit=crop';
 
-export default function NovelCard({ novel, rank }) {
-  // Use slug URL if available, fallback to ID
+// A chapter is "new" if the novel was updated within the last 7 days
+function isNewlyUpdated(novel) {
+  const updated = novel.updatedAt || novel.createdAt;
+  if (!updated) return false;
+  return Date.now() - new Date(updated).getTime() < 7 * 24 * 60 * 60 * 1000;
+}
+
+export default function NovelCard({ novel, rank, eager }) {
   const id   = novel._id || novel.id;
   const href = novel.slug ? `/novel/s/${novel.slug}` : `/novel/${id}`;
+  const isNew = isNewlyUpdated(novel);
 
   return (
     <Link to={href} style={{ textDecoration: 'none' }}>
@@ -14,7 +21,8 @@ export default function NovelCard({ novel, rank }) {
           <img
             src={novel.cover || PLACEHOLDER}
             alt={novel.title}
-            loading="lazy"
+            loading={eager ? 'eager' : 'lazy'}
+            fetchpriority={eager ? 'high' : undefined}
             onError={e => { e.target.src = PLACEHOLDER; }}
           />
           <div className="novel-card-overlay">
@@ -27,6 +35,9 @@ export default function NovelCard({ novel, rank }) {
               {novel.status === 'ongoing' ? '● ' : '✓ '}{novel.status}
             </span>
           </div>
+          {isNew && (
+            <div className="novel-card-new-badge">NEW</div>
+          )}
           {rank && <div className="novel-card-rank">#{rank}</div>}
         </div>
         <div className="novel-card-info">

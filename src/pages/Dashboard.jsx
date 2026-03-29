@@ -357,6 +357,8 @@ function ChapterManager({ novel, onBack }) {
   const [confirm, setConfirm]   = useState(null);
   const [msg, setMsg]           = useState('');
   const [chapterSearch, setChapterSearch] = useState('');
+  const [selected, setSelected] = useState(new Set());
+  const [bulkConfirm, setBulkConfirm] = useState(false);
 
   useEffect(() => { loadChapters(); }, [novel._id]);
 
@@ -396,6 +398,40 @@ function ChapterManager({ novel, onBack }) {
     } catch (e) { setMsg('Error: ' + e.message); }
   }
 
+  async function handleBulkDelete() {
+    if (selected.size === 0) return;
+    setLoading(true);
+    setBulkConfirm(false);
+    let done = 0, failed = 0;
+    for (const num of [...selected].sort((a,b) => a - b)) {
+      try { await deleteChapter(novel._id, num); done++; }
+      catch { failed++; }
+    }
+    setSelected(new Set());
+    setMsg(`Deleted ${done} chapter${done !== 1 ? 's' : ''}${failed ? `, ${failed} failed` : ''}.`);
+    setLoading(false);
+    loadChapters();
+  }
+
+  const visibleChapters = chapters.filter(ch =>
+    !chapterSearch ||
+    ch.title.toLowerCase().includes(chapterSearch.toLowerCase()) ||
+    String(ch.number).includes(chapterSearch)
+  );
+  const allVisibleSelected = visibleChapters.length > 0 && visibleChapters.every(ch => selected.has(ch.number));
+
+  function toggleAll() {
+    if (allVisibleSelected) {
+      setSelected(prev => { const s = new Set(prev); visibleChapters.forEach(ch => s.delete(ch.number)); return s; });
+    } else {
+      setSelected(prev => { const s = new Set(prev); visibleChapters.forEach(ch => s.add(ch.number)); return s; });
+    }
+  }
+
+  function toggleOne(num) {
+    setSelected(prev => { const s = new Set(prev); s.has(num) ? s.delete(num) : s.add(num); return s; });
+  }
+
   return (
     <div>
       <div style={{display:'flex', alignItems:'center', gap:'12px', marginBottom:'24px', flexWrap:'wrap'}}>
@@ -404,9 +440,15 @@ function ChapterManager({ novel, onBack }) {
           Back to Novels
         </button>
         <div style={{fontFamily:'var(--font-display)', fontSize:'1rem', fontWeight:600}}>{novel.title}</div>
-        <div style={{marginLeft:'auto', display:'flex', gap:'8px'}}>
+        <div style={{marginLeft:'auto', display:'flex', gap:'8px', flexWrap:'wrap'}}>
           {view === 'list' && (
             <>
+              {selected.size > 0 && (
+                <button className="btn-secondary" style={{color:'#ff6b6b', borderColor:'rgba(255,80,80,0.4)'}}
+                  onClick={() => setBulkConfirm(true)} disabled={loading}>
+                  🗑 Delete {selected.size} selected
+                </button>
+              )}
               <button className="btn-secondary" onClick={() => setView('import')}>📥 Bulk Import CSV</button>
               <button className="btn-primary" onClick={() => setView('new')}>+ New Chapter</button>
             </>
@@ -440,7 +482,8 @@ function ChapterManager({ novel, onBack }) {
             </div>
           )}
 
-          <div className="novels-table-header" style={{gridTemplateColumns:'80px 1fr 120px 100px 120px'}}>
+          <div className="novels-table-header" style={{gridTemplateColumns:'36px 80px 1fr 120px 100px 120px'}}>
+            <span><input type="checkbox" checked={allVisibleSelected} onChange={toggleAll} title="Select all visible" style={{cursor:'pointer'}} /></span>
             <span>No.</span><span>Title</span><span>Date</span><span>Words</span><span>Actions</span>
           </div>
           {chapters.length === 0 && (
@@ -448,12 +491,10 @@ function ChapterManager({ novel, onBack }) {
               No chapters yet. Upload your first chapter!
             </div>
           )}
-          {chapters
-            .filter(ch => !chapterSearch ||
-              ch.title.toLowerCase().includes(chapterSearch.toLowerCase()) ||
-              String(ch.number).includes(chapterSearch))
+          {visibleChapters
             .map(ch => (
-            <div key={ch._id} className="novels-table-row" style={{gridTemplateColumns:'80px 1fr 120px 100px 120px'}}>
+            <div key={ch._id} className="novels-table-row" style={{gridTemplateColumns:'36px 80px 1fr 120px 100px 120px', background: selected.has(ch.number) ? 'rgba(139,92,246,0.07)' : ''}}>
+              <span><input type="checkbox" checked={selected.has(ch.number)} onChange={() => toggleOne(ch.number)} style={{cursor:'pointer'}} /></span>
               <span className="table-mono" style={{color:'var(--accent-orange)'}}>Ch. {ch.number}</span>
               <span className="novel-table-title">{chapterSearch ? highlightMatch(ch.title, chapterSearch) : ch.title}</span>
               <span className="table-mono">{new Date(ch.createdAt).toLocaleDateString()}</span>
@@ -509,6 +550,13 @@ function ChapterManager({ novel, onBack }) {
           message={'Delete Chapter ' + confirm + '? This cannot be undone.'}
           onConfirm={() => handleDelete(confirm)}
           onCancel={() => setConfirm(null)}
+        />
+      )}
+      {bulkConfirm && (
+        <ConfirmDialog
+          message={`Permanently delete all ${selected.size} selected chapter${selected.size !== 1 ? 's' : ''}? This cannot be undone.`}
+          onConfirm={handleBulkDelete}
+          onCancel={() => setBulkConfirm(false)}
         />
       )}
     </div>

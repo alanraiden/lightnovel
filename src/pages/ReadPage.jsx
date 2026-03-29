@@ -29,7 +29,10 @@ export default function ReadPage() {
     const saved = localStorage.getItem('ns_fontsize');
     return saved ? Number(saved) : 18;
   });
+  const [fontFamily, setFontFamily] = useState(() => localStorage.getItem('ns_fontfamily') || 'serif');
+  const [lineHeight, setLineHeight] = useState(() => Number(localStorage.getItem('ns_lineheight') || '1.9'));
   const [readMode, setReadMode] = useState(() => localStorage.getItem('ns_readmode') || 'dark');
+  const [showSettings, setShowSettings] = useState(false);
   const [progress, setProgress] = useState(0);
   const [showToc, setShowToc]   = useState(false);
   const contentRef  = useRef(null);
@@ -116,6 +119,23 @@ export default function ReadPage() {
     localStorage.setItem('ns_readmode', m);
   }
 
+  function changeFontFamily(f) {
+    setFontFamily(f);
+    localStorage.setItem('ns_fontfamily', f);
+  }
+
+  function changeLineHeight(v) {
+    setLineHeight(v);
+    localStorage.setItem('ns_lineheight', v);
+  }
+
+  const FONT_FAMILIES = [
+    { id: 'serif',      label: 'Serif',    style: "'Crimson Pro', Georgia, serif" },
+    { id: 'sans',       label: 'Sans',     style: "'Inter', system-ui, sans-serif" },
+    { id: 'mono',       label: 'Mono',     style: "'JetBrains Mono', monospace" },
+    { id: 'dyslexic',   label: 'OpenDys',  style: "'OpenDyslexic', Arial, sans-serif" },
+  ];
+
   const sortedChapters = [...chapters].sort((a,b) => a.number - b.number);
   const currentIdx = sortedChapters.findIndex(c => c.number === num);
   const prevChapter = currentIdx > 0 ? sortedChapters[currentIdx - 1] : null;
@@ -185,22 +205,77 @@ export default function ReadPage() {
         </div>
 
         <div className="read-toolbar-actions">
-          <div className="mode-toggle">
-            <button className={readMode === 'dark'  ? 'active' : ''} onClick={() => changeMode('dark')}  title="Dark">🌙</button>
-            <button className={readMode === 'sepia' ? 'active' : ''} onClick={() => changeMode('sepia')} title="Sepia">📜</button>
-            <button className={readMode === 'light' ? 'active' : ''} onClick={() => changeMode('light')} title="Light">☀️</button>
-          </div>
           <div className="font-size-controls">
             <button onClick={() => changeFontSize(-1)}>A-</button>
             <span>{fontSize}px</span>
             <button onClick={() => changeFontSize(1)}>A+</button>
           </div>
+          <button className="toc-btn read-settings-btn" onClick={() => setShowSettings(s => !s)} title="Reading Settings">
+            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          </button>
           <button className="toc-btn" onClick={() => setShowToc(!showToc)} title="Table of Contents">
             <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
           </button>
           <span className="read-progress-text">{progress}%</span>
         </div>
       </div>
+
+      {/* Reading Settings Panel */}
+      {showSettings && (
+        <div className="read-settings-panel">
+          <div className="read-settings-header">
+            <span>Reading Settings</span>
+            <button onClick={() => setShowSettings(false)}>✕</button>
+          </div>
+          <div className="read-settings-body">
+            {/* Theme */}
+            <div className="read-settings-row">
+              <label>Theme</label>
+              <div className="mode-toggle">
+                <button className={readMode === 'dark'  ? 'active' : ''} onClick={() => changeMode('dark')}>🌙 Dark</button>
+                <button className={readMode === 'sepia' ? 'active' : ''} onClick={() => changeMode('sepia')}>📜 Sepia</button>
+                <button className={readMode === 'light' ? 'active' : ''} onClick={() => changeMode('light')}>☀️ Light</button>
+              </div>
+            </div>
+            {/* Font Family */}
+            <div className="read-settings-row">
+              <label>Font</label>
+              <div className="font-family-picker">
+                {FONT_FAMILIES.map(f => (
+                  <button key={f.id}
+                    className={fontFamily === f.id ? 'active' : ''}
+                    style={{ fontFamily: f.style }}
+                    onClick={() => changeFontFamily(f.id)}>
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {/* Font Size */}
+            <div className="read-settings-row">
+              <label>Size — {fontSize}px</label>
+              <div className="settings-slider-row">
+                <button onClick={() => changeFontSize(-1)}>A-</button>
+                <input type="range" min="13" max="26" value={fontSize}
+                  onChange={e => { setFontSize(Number(e.target.value)); localStorage.setItem('ns_fontsize', e.target.value); }}
+                  className="settings-slider" />
+                <button onClick={() => changeFontSize(1)}>A+</button>
+              </div>
+            </div>
+            {/* Line Height */}
+            <div className="read-settings-row">
+              <label>Line Spacing — {lineHeight}x</label>
+              <div className="settings-slider-row">
+                <span style={{fontSize:'0.8rem'}}>Tight</span>
+                <input type="range" min="1.4" max="2.4" step="0.1" value={lineHeight}
+                  onChange={e => changeLineHeight(Number(e.target.value))}
+                  className="settings-slider" />
+                <span style={{fontSize:'0.8rem'}}>Wide</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* TOC Drawer */}
       {showToc && (
@@ -261,7 +336,11 @@ export default function ReadPage() {
 
             <div
               className="reading-content"
-              style={{ fontSize: `${fontSize}px` }}
+              style={{
+                fontSize: `${fontSize}px`,
+                fontFamily: FONT_FAMILIES.find(f => f.id === fontFamily)?.style || undefined,
+                lineHeight: lineHeight,
+              }}
               dangerouslySetInnerHTML={{ __html: formatContent(chapter.content) }}
             />
 

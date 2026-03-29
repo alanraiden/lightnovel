@@ -132,6 +132,7 @@ export default function NovelPage() {
       />
       <div className="novel-banner">
         <img src={novel.cover || PLACEHOLDER} alt="" className="novel-banner-bg"
+          loading="eager" fetchpriority="high"
           onError={e => { e.target.src = PLACEHOLDER; }}/>
         <div className="novel-banner-overlay"/>
       </div>

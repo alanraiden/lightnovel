@@ -178,6 +178,13 @@
   grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
   gap: 20px;
   margin-top: 8px;
+  align-items: start;
+}
+
+/* Ensure Link wrappers (grid items) fill their cell */
+.browse-grid a {
+  display: block;
+  width: 100%;
 }
 
 .browse-empty {
@@ -233,12 +240,12 @@
   .browse-pill { padding: 6px 10px; font-size: 0.68rem; }
   .browse-genre-toggle { padding: 6px 10px; font-size: 0.68rem; }
   .browse-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 10px;
   }
   .page-btn { width: 32px; height: 32px; font-size: 0.72rem; }
 }
 
 @media (max-width: 380px) {
-  .browse-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .browse-grid { grid-template-columns: repeat(2, 1fr); gap: 6px; }
 }
