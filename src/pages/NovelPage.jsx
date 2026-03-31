@@ -1,6 +1,7 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { getNovel, getNovelBySlug, getChapters, rateNovel } from '../services/api';
+import { isBookmarked, toggleBookmark } from './Bookmarks';
 import { useAuth } from '../context/AuthContext';
 import CommentSection from '../components/CommentSection';
 import AdBanner from '../components/AdBanner';
@@ -55,6 +56,7 @@ export default function NovelPage() {
         const chs = await getChapters(n._id);
         setNovel(n);
         setChapters(chs);
+        setBookmarked(isBookmarked(n._id));
         document.title = n.title + ' - idenwebstudio'; // kept for fallback
         const desc = document.querySelector('meta[name="description"]');
         if (desc) desc.setAttribute('content', n.description?.slice(0, 160) || n.title);
@@ -132,7 +134,6 @@ export default function NovelPage() {
       />
       <div className="novel-banner">
         <img src={novel.cover || PLACEHOLDER} alt="" className="novel-banner-bg"
-          loading="eager" fetchpriority="high"
           onError={e => { e.target.src = PLACEHOLDER; }}/>
         <div className="novel-banner-overlay"/>
       </div>
@@ -153,7 +154,11 @@ export default function NovelPage() {
             ) : (
               <button className="btn-primary" style={{width:'100%', justifyContent:'center', opacity:0.5}} disabled>No Chapters Yet</button>
             )}
-            <button className={`btn-secondary bookmark-btn ${bookmarked ? 'bookmarked' : ''}`} onClick={() => setBookmarked(!bookmarked)}>
+            <button className={`btn-secondary bookmark-btn ${bookmarked ? 'bookmarked' : ''}`} onClick={() => {
+                if (!novel) return;
+                const added = toggleBookmark(novel);
+                setBookmarked(added);
+              }}>
               <svg width="16" height="16" fill={bookmarked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
               </svg>

@@ -268,6 +268,10 @@ export default function Navbar() {
                     {user.role === 'admin' && (
                       <Link to="/dashboard" onClick={() => setUserMenuOpen(false)}>Dashboard</Link>
                     )}
+                    <Link to="/bookmarks" onClick={() => setUserMenuOpen(false)} style={{display:'flex', alignItems:'center', gap:'8px'}}>
+                      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                      My Bookmarks
+                    </Link>
                     <div className="dropdown-divider"/>
                     <button className="dropdown-logout" onClick={() => { logout(); setUserMenuOpen(false); }}>Sign Out</button>
                   </div>
@@ -300,6 +304,9 @@ export default function Navbar() {
               <Link to="/updates"  className="mobile-nav-link" onClick={() => setMobileOpen(false)}>Updates</Link>
               {user?.role === 'admin' && (
                 <Link to="/dashboard" className="mobile-nav-link" onClick={() => setMobileOpen(false)}>Dashboard</Link>
+              )}
+              {user && (
+                <Link to="/bookmarks" className="mobile-nav-link" onClick={() => setMobileOpen(false)}>🔖 My Bookmarks</Link>
               )}
             </div>
           </div>

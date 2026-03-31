@@ -12,6 +12,7 @@ import Rankings from './pages/Rankings';
 import Genres from './pages/Genres';
 import Updates from './pages/Updates';
 import PrivacyTerms from './pages/PrivacyTerms';
+import Bookmarks from './pages/Bookmarks';
 
 function Layout({ children, hideFooter = false }) {
   return (
@@ -39,6 +40,7 @@ export default function App() {
           <Route path="/genres" element={<Layout><Genres /></Layout>} />
           <Route path="/updates" element={<Layout><Updates /></Layout>} />
           <Route path="/privacy" element={<Layout><PrivacyTerms /></Layout>} />
+          <Route path="/bookmarks" element={<Layout><Bookmarks /></Layout>} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
