@@ -484,3 +484,44 @@
   .trend-tab { padding: 5px 8px; font-size: 0.66rem; flex: 1; text-align: center; }
   .section-see-all { order: 2; }
 }
+
+/* ── Latest Updates pagination ──────────────────────────────────────────────── */
+.updates-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.updates-page-btn {
+  min-width: 30px;
+  height: 30px;
+  padding: 0 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.updates-page-btn:hover:not(:disabled) {
+  border-color: var(--accent-orange);
+  color: var(--text-primary);
+}
+.updates-page-btn.active {
+  background: var(--accent-orange);
+  border-color: var(--accent-orange);
+  color: white;
+}
+.updates-page-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}

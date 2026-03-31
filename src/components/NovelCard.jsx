@@ -2,17 +2,21 @@ import { Link } from 'react-router-dom';
 
 const PLACEHOLDER = 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=400&h=600&fit=crop';
 
-// A chapter is "new" if the novel was updated within the last 7 days
-function isNewlyUpdated(novel) {
+// "UPDATE" badge: updated within last 3 days
+function isRecentlyUpdated(novel) {
   const updated = novel.updatedAt || novel.createdAt;
   if (!updated) return false;
-  return Date.now() - new Date(updated).getTime() < 7 * 24 * 60 * 60 * 1000;
+  return Date.now() - new Date(updated).getTime() < 3 * 24 * 60 * 60 * 1000;
 }
 
 export default function NovelCard({ novel, rank, eager }) {
   const id   = novel._id || novel.id;
   const href = novel.slug ? `/novel/s/${novel.slug}` : `/novel/${id}`;
-  const isNew = isNewlyUpdated(novel);
+  const showUpdate   = isRecentlyUpdated(novel);
+  const showOriginal = !!novel.isOriginal;
+
+  // Show latest chapter number if available, otherwise chapter count
+  const chapterLabel = novel.chapterCount > 0 ? `Ch.${novel.chapterCount}` : 'No chapters';
 
   return (
     <Link to={href} style={{ textDecoration: 'none' }}>
@@ -27,7 +31,7 @@ export default function NovelCard({ novel, rank, eager }) {
           />
           <div className="novel-card-overlay">
             <span style={{ color: 'var(--text-secondary)', fontSize: '0.72rem', fontFamily: 'var(--font-mono)' }}>
-              {novel.chapterCount || novel.chapters || 0} chapters
+              {novel.chapterCount || 0} chapters
             </span>
           </div>
           <div className="novel-card-status">
@@ -35,14 +39,30 @@ export default function NovelCard({ novel, rank, eager }) {
               {novel.status === 'ongoing' ? '● ' : '✓ '}{novel.status}
             </span>
           </div>
-          {isNew && (
-            <div className="novel-card-new-badge">NEW</div>
+
+          {/* ORIGINAL badge — top right (replaces rank if both present) */}
+          {showOriginal && !rank && (
+            <div className="novel-card-original-badge">ORIGINAL</div>
           )}
           {rank && <div className="novel-card-rank">#{rank}</div>}
+
+          {/* UPDATE badge — bottom right */}
+          {showUpdate && (
+            <div className="novel-card-update-badge">UPDATE</div>
+          )}
         </div>
+
         <div className="novel-card-info">
           <div className="novel-card-title">{novel.title}</div>
-          <div className="novel-card-author">{novel.author}</div>
+
+          {/* Chapter number instead of author name */}
+          <div className="novel-card-chapter-label">
+            {showOriginal && (
+              <span className="novel-card-original-inline">✦ Original</span>
+            )}
+            <span>{chapterLabel}</span>
+          </div>
+
           <div className="novel-card-meta">
             <div className="novel-card-rating">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">

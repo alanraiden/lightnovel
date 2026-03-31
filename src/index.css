@@ -291,25 +291,61 @@ img {
   border-radius: 6px;
 }
 
-.novel-card-new-badge {
+/* ── ORIGINAL badge (top-right on cover) ─────────────────────────────────── */
+.novel-card-original-badge {
   position: absolute;
-  bottom: 10px;
+  top: 8px;
   right: 8px;
-  background: linear-gradient(135deg, #22c55e, #16a34a);
+  background: linear-gradient(135deg, #f59e0b, #d97706);
   color: white;
   font-family: var(--font-mono);
-  font-size: 0.6rem;
+  font-size: 0.54rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  padding: 2px 6px;
+  letter-spacing: 0.1em;
+  padding: 3px 6px;
   border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(34,197,94,0.4);
-  animation: pulse-new 2s ease-in-out infinite;
+  box-shadow: 0 2px 8px rgba(245,158,11,0.5);
+  text-transform: uppercase;
 }
 
-@keyframes pulse-new {
-  0%, 100% { box-shadow: 0 2px 8px rgba(34,197,94,0.4); }
-  50%       { box-shadow: 0 2px 14px rgba(34,197,94,0.7); }
+/* ── UPDATE badge (bottom-right on cover) ───────────────────────────────── */
+.novel-card-update-badge {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  font-family: var(--font-mono);
+  font-size: 0.54rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 3px 6px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(59,130,246,0.45);
+  animation: pulse-update 2.5s ease-in-out infinite;
+}
+
+@keyframes pulse-update {
+  0%, 100% { box-shadow: 0 2px 8px rgba(59,130,246,0.45); }
+  50%       { box-shadow: 0 2px 16px rgba(59,130,246,0.75); }
+}
+
+/* ── Chapter label row (replaces author) ────────────────────────────────── */
+.novel-card-chapter-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.novel-card-original-inline {
+  color: #f59e0b;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
 }
 
 .novel-card-info {

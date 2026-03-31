@@ -59,9 +59,14 @@ export default function Rankings() {
                     <img src={n.cover || PLACEHOLDER} alt={n.title} style={{width:'46px',height:'62px',objectFit:'cover',borderRadius:'4px', display:'block'}}
                       onError={e => { e.target.src = PLACEHOLDER; }} />
                     <div>
-                      <div style={{fontFamily:'var(--font-display)', fontSize:'0.9rem', fontWeight:600, color:'var(--text-primary)', marginBottom:'6px'}}>{n.title}</div>
+                      <div style={{display:'flex', alignItems:'center', gap:'8px', marginBottom:'6px', flexWrap:'wrap'}}>
+                        <span style={{fontFamily:'var(--font-display)', fontSize:'0.9rem', fontWeight:600, color:'var(--text-primary)'}}>{n.title}</span>
+                        {n.isOriginal && <span style={{background:'linear-gradient(135deg,#f59e0b,#d97706)', color:'white', fontSize:'0.58rem', fontWeight:700, fontFamily:'var(--font-mono)', letterSpacing:'0.1em', padding:'2px 6px', borderRadius:'4px', flexShrink:0}}>ORIGINAL</span>}
+                      </div>
                       <div style={{display:'flex', gap:'10px', alignItems:'center', flexWrap:'wrap'}}>
-                        <span style={{color:'var(--text-muted)', fontSize:'0.78rem'}}>by {n.author}</span>
+                        <span style={{color:'var(--text-muted)', fontSize:'0.78rem', fontFamily:'var(--font-mono)'}}>
+                          {n.chapterCount > 0 ? `Ch.${n.chapterCount}` : 'No chapters'}
+                        </span>
                         {(n.genres||[]).slice(0,2).map(g => <span key={g} className="genre-tag">{g}</span>)}
                         <span className={`badge badge-${n.status}`}>{n.status}</span>
                       </div>

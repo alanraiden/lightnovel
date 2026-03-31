@@ -209,6 +209,9 @@ export default function Home() {
   const [trendLoading,  setTrendLoading] = useState(false);
   const [topRated,      setTopRated]  = useState([]);
   const [latest,        setLatest]    = useState([]);
+  const [latestAll,     setLatestAll] = useState([]);
+  const [latestPage,    setLatestPage]= useState(1);
+  const LATEST_PER_PAGE = 9;
   const [recentlyAdded, setRecent]    = useState([]);
   const [loading,       setLoading]   = useState(true);
 
@@ -223,7 +226,7 @@ export default function Home() {
         const [byViews, byRating, byNew, byAdded] = await Promise.all([
           getNovels({ sort: 'views',  limit: 12 }),
           getNovels({ sort: 'rating', limit: 12 }),
-          getNovels({ sort: 'new',    limit: 9  }),
+          getNovels({ sort: 'new',    limit: 36 }),
           getNovels({ sort: 'added',  limit: 4  }),
         ]);
         const trendNovels = byViews.novels  || [];
@@ -240,6 +243,7 @@ export default function Home() {
         setTrending(trendNovels.slice(0, 12));
         setTrendCache({ all: trendNovels.slice(0, 12) });
         setTopRated(ratedNovels.slice(0, 12));
+        setLatestAll(newNovels);
         setLatest(newNovels.slice(0, 9));
         setRecent(addedNovels.slice(0, 4));
       } catch (err) {
@@ -367,62 +371,90 @@ export default function Home() {
               <span>🕐</span> Latest Updates
               <Link to="/updates" className="section-see-all">See All →</Link>
             </div>
-            {isMobile ? (
-              <div className="scroll-row">
-                {loading
-                  ? [...Array(5)].map((_,i) => (
-                      <div key={i} className="update-item update-item-card">
-                        <div className="skeleton-cover" style={{width:'46px',height:'62px',flexShrink:0}}/>
-                        <div className="skeleton-info" style={{flex:1}}>
-                          <div className="skeleton-line" style={{width:'70%'}}/>
-                          <div className="skeleton-line" style={{width:'50%'}}/>
-                        </div>
-                      </div>
-                    ))
-                  : latest.map(n => (
-                      <Link to={n.slug ? `/novel/s/${n.slug}` : `/novel/${n._id}`} key={n._id} className="update-item update-item-card">
-                        <img src={n.cover || PLACEHOLDER} alt={n.title} className="update-cover"
-                          onError={e => { e.target.src = PLACEHOLDER; }}/>
-                        <div className="update-info">
-                          <div className="update-title">{n.title}</div>
-                          <div className="update-chapter">
-                            {n.chapterCount > 0 ? `${n.chapterCount} chapters` : 'No chapters yet'}
+            {(() => {
+              const totalLatestPages = Math.ceil(latestAll.length / LATEST_PER_PAGE);
+              const pagedLatest = latestAll.slice((latestPage - 1) * LATEST_PER_PAGE, latestPage * LATEST_PER_PAGE);
+              const displayList = loading ? [] : pagedLatest;
+              return isMobile ? (
+                <div className="scroll-row">
+                  {loading
+                    ? [...Array(5)].map((_,i) => (
+                        <div key={i} className="update-item update-item-card">
+                          <div className="skeleton-cover" style={{width:'46px',height:'62px',flexShrink:0}}/>
+                          <div className="skeleton-info" style={{flex:1}}>
+                            <div className="skeleton-line" style={{width:'70%'}}/>
+                            <div className="skeleton-line" style={{width:'50%'}}/>
                           </div>
-                          <div className="update-date">{new Date(n.updatedAt).toLocaleDateString()}</div>
                         </div>
-                      </Link>
-                    ))
-                }
-              </div>
-            ) : (
-              <div className="updates-list">
-                {loading
-                  ? [...Array(5)].map((_,i) => (
-                      <div key={i} className="update-item">
-                        <div className="skeleton-cover" style={{width:'46px',height:'62px',flexShrink:0}}/>
-                        <div className="skeleton-info" style={{flex:1}}>
-                          <div className="skeleton-line" style={{width:'70%'}}/>
-                          <div className="skeleton-line" style={{width:'50%'}}/>
-                        </div>
-                      </div>
-                    ))
-                  : latest.map(n => (
-                      <Link to={n.slug ? `/novel/s/${n.slug}` : `/novel/${n._id}`} key={n._id} className="update-item">
-                        <img src={n.cover || PLACEHOLDER} alt={n.title} className="update-cover"
-                          onError={e => { e.target.src = PLACEHOLDER; }}/>
-                        <div className="update-info">
-                          <div className="update-title">{n.title}</div>
-                          <div className="update-chapter">
-                            {n.chapterCount > 0 ? `${n.chapterCount} chapters` : 'No chapters yet'}
+                      ))
+                    : displayList.map(n => (
+                        <Link to={n.slug ? `/novel/s/${n.slug}` : `/novel/${n._id}`} key={n._id} className="update-item update-item-card">
+                          <img src={n.cover || PLACEHOLDER} alt={n.title} className="update-cover"
+                            onError={e => { e.target.src = PLACEHOLDER; }}/>
+                          <div className="update-info">
+                            <div className="update-title">{n.title}</div>
+                            <div className="update-chapter">
+                              {n.chapterCount > 0 ? `Ch.${n.chapterCount}` : 'No chapters yet'}
+                            </div>
+                            <div className="update-date">{new Date(n.updatedAt).toLocaleDateString()}</div>
                           </div>
-                          <div className="update-date">{new Date(n.updatedAt).toLocaleDateString()}</div>
-                        </div>
-                        <span className={`badge badge-${n.status}`}>{n.status}</span>
-                      </Link>
-                    ))
-                }
-              </div>
-            )}
+                        </Link>
+                      ))
+                  }
+                </div>
+              ) : (
+                <>
+                  <div className="updates-list">
+                    {loading
+                      ? [...Array(5)].map((_,i) => (
+                          <div key={i} className="update-item">
+                            <div className="skeleton-cover" style={{width:'46px',height:'62px',flexShrink:0}}/>
+                            <div className="skeleton-info" style={{flex:1}}>
+                              <div className="skeleton-line" style={{width:'70%'}}/>
+                              <div className="skeleton-line" style={{width:'50%'}}/>
+                            </div>
+                          </div>
+                        ))
+                      : displayList.map(n => (
+                          <Link to={n.slug ? `/novel/s/${n.slug}` : `/novel/${n._id}`} key={n._id} className="update-item">
+                            <img src={n.cover || PLACEHOLDER} alt={n.title} className="update-cover"
+                              onError={e => { e.target.src = PLACEHOLDER; }}/>
+                            <div className="update-info">
+                              <div className="update-title">{n.title}</div>
+                              <div className="update-chapter">
+                                {n.chapterCount > 0 ? `Ch.${n.chapterCount}` : 'No chapters yet'}
+                              </div>
+                              <div className="update-date">{new Date(n.updatedAt).toLocaleDateString()}</div>
+                            </div>
+                            <span className={`badge badge-${n.status}`}>{n.status}</span>
+                          </Link>
+                        ))
+                    }
+                  </div>
+                  {!loading && totalLatestPages > 1 && (
+                    <div className="updates-pagination">
+                      <button
+                        className="updates-page-btn"
+                        disabled={latestPage === 1}
+                        onClick={() => setLatestPage(p => p - 1)}
+                      >‹</button>
+                      {[...Array(totalLatestPages)].map((_, i) => (
+                        <button
+                          key={i}
+                          className={`updates-page-btn${latestPage === i + 1 ? ' active' : ''}`}
+                          onClick={() => setLatestPage(i + 1)}
+                        >{i + 1}</button>
+                      ))}
+                      <button
+                        className="updates-page-btn"
+                        disabled={latestPage === totalLatestPages}
+                        onClick={() => setLatestPage(p => p + 1)}
+                      >›</button>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </section>
 
           {/* Recently Added — scroll row on mobile */}
