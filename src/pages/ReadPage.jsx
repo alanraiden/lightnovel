@@ -35,6 +35,7 @@ export default function ReadPage() {
   const [showSettings, setShowSettings] = useState(false);
   const [progress, setProgress] = useState(0);
   const [showToc, setShowToc]   = useState(false);
+  const [tocSearch, setTocSearch] = useState('');
   const contentRef  = useRef(null);
   const touchStartX = useRef(null);
   const touchStartY = useRef(null);
@@ -277,24 +278,68 @@ export default function ReadPage() {
         </div>
       )}
 
-      {/* TOC Drawer */}
+      {/* TOC Drawer — polished slide-in panel */}
       {showToc && (
-        <div className="toc-drawer">
-          <div className="toc-header">
-            <span>Table of Contents</span>
-            <button onClick={() => setShowToc(false)}>✕</button>
+        <div className="toc-overlay" onClick={() => setShowToc(false)}/>
+      )}
+      <div className={`toc-drawer ${showToc ? 'toc-open' : ''}`}>
+        <div className="toc-header">
+          <div className="toc-header-top">
+            <div className="toc-header-title">
+              <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+              Table of Contents
+            </div>
+            <button className="toc-close-btn" onClick={() => { setShowToc(false); setTocSearch(''); }}>
+              <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
           </div>
-          <div className="toc-list">
-            {sortedChapters.map(ch => (
-              <Link key={ch._id} to={novel?.slug ? `/read/s/${novel.slug}/chapter-${ch.number}` : `/read/${novel?._id}/${ch.number}`}
-                className={`toc-item ${ch.number === num ? 'active' : ''}`}
-                onClick={() => setShowToc(false)}>
-                <span className="toc-num">Ch. {ch.number}</span>
-                <span className="toc-title">{ch.title}</span>
-              </Link>
-            ))}
+          {novel?.title && <div className="toc-novel-title">{novel.title}</div>}
+          <div className="toc-search">
+            <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input
+              type="text"
+              placeholder="Search chapters..."
+              value={tocSearch}
+              onChange={e => setTocSearch(e.target.value)}
+              autoComplete="off"
+            />
+            {tocSearch && (
+              <button className="toc-search-clear" onClick={() => setTocSearch('')}>✕</button>
+            )}
           </div>
         </div>
+        <div className="toc-count">
+          {tocSearch
+            ? `${sortedChapters.filter(ch => ch.title.toLowerCase().includes(tocSearch.toLowerCase()) || String(ch.number).includes(tocSearch)).length} results`
+            : `${sortedChapters.length} chapters`
+          }
+        </div>
+        <div className="toc-list">
+          {sortedChapters
+            .filter(ch => !tocSearch || ch.title.toLowerCase().includes(tocSearch.toLowerCase()) || String(ch.number).includes(tocSearch))
+            .map(ch => (
+              <Link key={ch._id}
+                to={novel?.slug ? `/read/s/${novel.slug}/chapter-${ch.number}` : `/read/${novel?._id}/${ch.number}`}
+                className={`toc-item ${ch.number === num ? 'active' : ''}`}
+                onClick={() => { setShowToc(false); setTocSearch(''); }}>
+                <span className="toc-num">Ch.{ch.number}</span>
+                <span className="toc-title">{ch.title}</span>
+                {ch.number === num && <span className="toc-current-dot"/>}
+              </Link>
+            ))
+          }
+          {tocSearch && sortedChapters.filter(ch => ch.title.toLowerCase().includes(tocSearch.toLowerCase()) || String(ch.number).includes(tocSearch)).length === 0 && (
+            <div className="toc-empty">No chapters match</div>
+          )}
+        </div>
+      </div>
+
+      {/* Floating TOC button — bottom right */}
+      {!showToc && chapter && (
+        <button className="toc-float-btn" onClick={() => setShowToc(true)} aria-label="Table of Contents">
+          <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          <span>Chapters</span>
+        </button>
       )}
 
       <div className="reading-container" ref={contentRef}>

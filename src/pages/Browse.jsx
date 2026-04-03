@@ -5,7 +5,7 @@ import { getNovels } from '../services/api';
 import SEO from '../components/SEO';
 import './Browse.css';
 
-const GENRES = ['Action','Adventure','Comedy','Drama','Fantasy','Historical','Horror','Isekai','Martial Arts','Mecha','Mystery','Philosophical','Romance','Sci-Fi','System','Wuxia','Xianxia','Psychological'];
+const GENRES = ['Action','Adventure','Comedy','Drama','Fantasy','Harem','Historical','Horror','Isekai','Josei','Martial Arts','Mecha','Mystery','Psychological','Romance','School Life','Sci-Fi','Slice of Life','Sports','Supernatural','System','Tragedy','Wuxia','Xianxia','Xuanhuan'];
 
 function NovelCardSkeleton() {
   return (

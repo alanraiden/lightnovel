@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { getNovels, createNovel, updateNovel, deleteNovel, getChapters, getChapterForEdit, createChapter, updateChapter, deleteChapter, bulkImportChapters } from '../services/api';
 import './Dashboard.css';
 
-const GENRES = ['Action','Adventure','Comedy','Drama','Fantasy','Historical','Horror','Isekai','Martial Arts','Mecha','Mystery','Philosophical','Romance','Sci-Fi','System','Wuxia','Xianxia','Psychological'];
+const GENRES = ['Action','Adventure','Comedy','Drama','Fantasy','Harem','Historical','Horror','Isekai','Josei','Martial Arts','Mecha','Mystery','Psychological','Romance','School Life','Sci-Fi','Slice of Life','Sports','Supernatural','System','Tragedy','Wuxia','Xianxia','Xuanhuan'];
 
 // ── Reusable confirm dialog ───────────────────────────────────────────────────
 function ConfirmDialog({ message, onConfirm, onCancel }) {
