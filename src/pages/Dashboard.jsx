@@ -620,7 +620,7 @@ export default function Dashboard() {
 
   async function loadMyNovels() {
     if (!user) return;
-    try { const data = await getNovels({ authorId: user.id || user._id, limit: 50 }); setNovels(data.novels || []); } catch {}
+    try { const data = await getNovels({ authorId: user.id || user._id, limit: 500 }); setNovels(data.novels || []); } catch {}
   }
 
   if (!token) {

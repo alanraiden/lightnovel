@@ -77,7 +77,6 @@ function HeroSlider({ novels, loading }) {
 
   useEffect(() => {
     if (!novels.length) return;
-    // Disable auto-slide on mobile (touch devices)
     if (window.matchMedia('(max-width: 600px)').matches) return;
     timerRef.current = setInterval(next, 5000);
     return () => clearInterval(timerRef.current);
@@ -192,11 +191,183 @@ function HeroSlider({ novels, loading }) {
               <button key={i} className={`hero-dot ${i === current ? 'active' : ''}`} onClick={() => goTo(i)} aria-label={`Slide ${i+1}`}/>
             ))}
           </div>
-
         </>
       )}
     </section>
   );
+}
+
+// ── Latest Updates section with list/grid toggle + pagination ─────────────────
+function LatestUpdates({ latestAll, loading, isMobile }) {
+  const [view,       setView]       = useState('list'); // 'list' | 'grid'
+  const [page,       setPage]       = useState(1);
+  const PER_PAGE = 12;
+
+  const totalPages = Math.ceil(latestAll.length / PER_PAGE);
+  const paged      = latestAll.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+
+  function goPage(p) {
+    setPage(p);
+    // scroll smoothly to section top on mobile
+    if (isMobile) {
+      document.getElementById('latest-updates-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  const skeletonList = [...Array(5)].map((_,i) => (
+    <div key={i} className="update-item">
+      <div className="skeleton-cover" style={{width:'52px',height:'72px',flexShrink:0}}/>
+      <div className="skeleton-info" style={{flex:1}}>
+        <div className="skeleton-line" style={{width:'70%'}}/>
+        <div className="skeleton-line" style={{width:'40%'}}/>
+        <div className="skeleton-line" style={{width:'30%'}}/>
+      </div>
+    </div>
+  ));
+
+  const skeletonGrid = [...Array(10)].map((_,i) => (
+    <div key={i} className="lu-grid-card lu-grid-skeleton">
+      <div className="skeleton-cover lu-grid-cover"/>
+      <div className="lu-grid-info">
+        <div className="skeleton-line" style={{width:'90%',height:'0.7rem'}}/>
+        <div className="skeleton-line" style={{width:'55%',height:'0.65rem'}}/>
+      </div>
+    </div>
+  ));
+
+  return (
+    <section className="home-section lu-section" id="latest-updates-section">
+      {/* Header with toggle */}
+      <div className="section-title lu-header">
+        <span>🕐</span>
+        <span>Latest Updates</span>
+        <Link to="/updates" className="section-see-all" style={{marginLeft:'auto'}}>See All →</Link>
+        {/* View toggle */}
+        <div className="lu-toggle">
+          <button
+            className={`lu-toggle-btn ${view === 'list' ? 'active' : ''}`}
+            onClick={() => { setView('list'); setPage(1); }}
+            title="Detailed list view"
+          >
+            <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+              <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+            </svg>
+            List
+          </button>
+          <button
+            className={`lu-toggle-btn ${view === 'grid' ? 'active' : ''}`}
+            onClick={() => { setView('grid'); setPage(1); }}
+            title="Compact grid view"
+          >
+            <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+              <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+            </svg>
+            Grid
+          </button>
+        </div>
+      </div>
+
+      {/* ── LIST VIEW ── */}
+      {view === 'list' && (
+        <div className="lu-list">
+          {loading ? skeletonList : paged.map(n => (
+            <Link
+              to={n.slug ? `/novel/s/${n.slug}` : `/novel/${n._id}`}
+              key={n._id}
+              className="lu-list-item"
+            >
+              <img
+                src={n.cover || PLACEHOLDER}
+                alt={n.title}
+                className="lu-list-cover"
+                loading="lazy"
+                onError={e => { e.target.src = PLACEHOLDER; }}
+              />
+              <div className="lu-list-info">
+                <div className="lu-list-title">{n.title}</div>
+                <div className="lu-list-chapter">
+                  {n.chapterCount > 0 ? `Ch.${n.chapterCount}` : 'No chapters'}
+                </div>
+                <div className="lu-list-meta">
+                  <span className={`badge badge-${n.status}`}>{n.status}</span>
+                  <span className="lu-list-date">{timeAgo(n.updatedAt)}</span>
+                </div>
+              </div>
+              <svg className="lu-list-arrow" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {/* ── GRID VIEW ── */}
+      {view === 'grid' && (
+        <div className="lu-grid">
+          {loading ? skeletonGrid : paged.map(n => (
+            <Link
+              to={n.slug ? `/novel/s/${n.slug}` : `/novel/${n._id}`}
+              key={n._id}
+              className="lu-grid-card"
+            >
+              <div className="lu-grid-cover-wrap">
+                <img
+                  src={n.cover || PLACEHOLDER}
+                  alt={n.title}
+                  className="lu-grid-cover"
+                  loading="lazy"
+                  onError={e => { e.target.src = PLACEHOLDER; }}
+                />
+                <div className="lu-grid-chapter-badge">
+                  {n.chapterCount > 0 ? `Ch.${n.chapterCount}` : '—'}
+                </div>
+              </div>
+              <div className="lu-grid-info">
+                <div className="lu-grid-title">{n.title}</div>
+                <div className="lu-grid-date">{timeAgo(n.updatedAt)}</div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {!loading && totalPages > 1 && (
+        <div className="updates-pagination">
+          <button
+            className="updates-page-btn"
+            disabled={page === 1}
+            onClick={() => goPage(page - 1)}
+          >‹</button>
+          {[...Array(totalPages)].map((_, i) => (
+            <button
+              key={i}
+              className={`updates-page-btn${page === i + 1 ? ' active' : ''}`}
+              onClick={() => goPage(i + 1)}
+            >{i + 1}</button>
+          ))}
+          <button
+            className="updates-page-btn"
+            disabled={page === totalPages}
+            onClick={() => goPage(page + 1)}
+          >›</button>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function timeAgo(dateStr) {
+  if (!dateStr) return '';
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1)   return 'just now';
+  if (m < 60)  return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24)  return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d < 7)   return `${d}d ago`;
+  return new Date(dateStr).toLocaleDateString();
 }
 
 export default function Home() {
@@ -204,14 +375,11 @@ export default function Home() {
   const isMobile = useIsMobile();
   const [featured,      setFeatured]  = useState([]);
   const [trending,      setTrending]  = useState([]);
-  const [trendTab,      setTrendTab]  = useState('week'); // today | week | month | all
-  const [trendCache,    setTrendCache] = useState({});    // cache per tab
+  const [trendTab,      setTrendTab]  = useState('week');
+  const [trendCache,    setTrendCache] = useState({});
   const [trendLoading,  setTrendLoading] = useState(false);
   const [topRated,      setTopRated]  = useState([]);
-  const [latest,        setLatest]    = useState([]);
   const [latestAll,     setLatestAll] = useState([]);
-  const [latestPage,    setLatestPage]= useState(1);
-  const LATEST_PER_PAGE = 9;
   const [recentlyAdded, setRecent]    = useState([]);
   const [loading,       setLoading]   = useState(true);
 
@@ -226,8 +394,8 @@ export default function Home() {
         const [byViews, byRating, byNew, byAdded] = await Promise.all([
           getNovels({ sort: 'views',  limit: 12 }),
           getNovels({ sort: 'rating', limit: 12 }),
-          getNovels({ sort: 'new',    limit: 36 }),
-          getNovels({ sort: 'added',  limit: 4  }),
+          getNovels({ sort: 'new',    limit: 50 }),
+          getNovels({ sort: 'added',  limit: 12 }),
         ]);
         const trendNovels = byViews.novels  || [];
         const ratedNovels = byRating.novels || [];
@@ -244,8 +412,7 @@ export default function Home() {
         setTrendCache({ all: trendNovels.slice(0, 12) });
         setTopRated(ratedNovels.slice(0, 12));
         setLatestAll(newNovels);
-        setLatest(newNovels.slice(0, 9));
-        setRecent(addedNovels.slice(0, 4));
+        setRecent(addedNovels.slice(0, 12));
       } catch (err) {
         console.error(err);
       } finally {
@@ -275,7 +442,7 @@ export default function Home() {
     return (
       <div className="home">
         <SEO title="Read Light Novels Online" />
-      <div className="home-empty">
+        <div className="home-empty">
           <div className="home-empty-icon">📚</div>
           <h2>No novels yet</h2>
           <p>Be the first to publish a novel on idenwebstudio!</p>
@@ -330,6 +497,7 @@ export default function Home() {
           </section>
         )}
 
+        {/* Trending */}
         <section className="home-section">
           <div className="section-title">
             <span>🔥</span> Trending
@@ -354,6 +522,7 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Top Rated */}
         <section className="home-section">
           <div className="section-title">
             <span>⭐</span> Top Rated
@@ -364,113 +533,23 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Latest Updates — vertical list on desktop, horizontal scroll on mobile */}
-        <div className={isMobile ? "" : "two-col-sections"}>
-          <section className="home-section">
-            <div className="section-title">
-              <span>🕐</span> Latest Updates
-              <Link to="/updates" className="section-see-all">See All →</Link>
-            </div>
-            {(() => {
-              const totalLatestPages = Math.ceil(latestAll.length / LATEST_PER_PAGE);
-              const pagedLatest = latestAll.slice((latestPage - 1) * LATEST_PER_PAGE, latestPage * LATEST_PER_PAGE);
-              const displayList = loading ? [] : pagedLatest;
-              return isMobile ? (
-                <div className="scroll-row">
-                  {loading
-                    ? [...Array(5)].map((_,i) => (
-                        <div key={i} className="update-item update-item-card">
-                          <div className="skeleton-cover" style={{width:'46px',height:'62px',flexShrink:0}}/>
-                          <div className="skeleton-info" style={{flex:1}}>
-                            <div className="skeleton-line" style={{width:'70%'}}/>
-                            <div className="skeleton-line" style={{width:'50%'}}/>
-                          </div>
-                        </div>
-                      ))
-                    : displayList.map(n => (
-                        <Link to={n.slug ? `/novel/s/${n.slug}` : `/novel/${n._id}`} key={n._id} className="update-item update-item-card">
-                          <img src={n.cover || PLACEHOLDER} alt={n.title} className="update-cover"
-                            onError={e => { e.target.src = PLACEHOLDER; }}/>
-                          <div className="update-info">
-                            <div className="update-title">{n.title}</div>
-                            <div className="update-chapter">
-                              {n.chapterCount > 0 ? `Ch.${n.chapterCount}` : 'No chapters yet'}
-                            </div>
-                            <div className="update-date">{new Date(n.updatedAt).toLocaleDateString()}</div>
-                          </div>
-                        </Link>
-                      ))
-                  }
-                </div>
-              ) : (
-                <>
-                  <div className="updates-list">
-                    {loading
-                      ? [...Array(5)].map((_,i) => (
-                          <div key={i} className="update-item">
-                            <div className="skeleton-cover" style={{width:'46px',height:'62px',flexShrink:0}}/>
-                            <div className="skeleton-info" style={{flex:1}}>
-                              <div className="skeleton-line" style={{width:'70%'}}/>
-                              <div className="skeleton-line" style={{width:'50%'}}/>
-                            </div>
-                          </div>
-                        ))
-                      : displayList.map(n => (
-                          <Link to={n.slug ? `/novel/s/${n.slug}` : `/novel/${n._id}`} key={n._id} className="update-item">
-                            <img src={n.cover || PLACEHOLDER} alt={n.title} className="update-cover"
-                              onError={e => { e.target.src = PLACEHOLDER; }}/>
-                            <div className="update-info">
-                              <div className="update-title">{n.title}</div>
-                              <div className="update-chapter">
-                                {n.chapterCount > 0 ? `Ch.${n.chapterCount}` : 'No chapters yet'}
-                              </div>
-                              <div className="update-date">{new Date(n.updatedAt).toLocaleDateString()}</div>
-                            </div>
-                            <span className={`badge badge-${n.status}`}>{n.status}</span>
-                          </Link>
-                        ))
-                    }
-                  </div>
-                  {!loading && totalLatestPages > 1 && (
-                    <div className="updates-pagination">
-                      <button
-                        className="updates-page-btn"
-                        disabled={latestPage === 1}
-                        onClick={() => setLatestPage(p => p - 1)}
-                      >‹</button>
-                      {[...Array(totalLatestPages)].map((_, i) => (
-                        <button
-                          key={i}
-                          className={`updates-page-btn${latestPage === i + 1 ? ' active' : ''}`}
-                          onClick={() => setLatestPage(i + 1)}
-                        >{i + 1}</button>
-                      ))}
-                      <button
-                        className="updates-page-btn"
-                        disabled={latestPage === totalLatestPages}
-                        onClick={() => setLatestPage(p => p + 1)}
-                      >›</button>
-                    </div>
-                  )}
-                </>
-              );
-            })()}
-          </section>
+        {/* Recently Added — horizontal scroll row, 12 novels */}
+        <section className="home-section">
+          <div className="section-title">
+            <span>✨</span> Recently Added
+            <Link to="/browse?sort=added" className="section-see-all">See All →</Link>
+          </div>
+          <div className="scroll-row">
+            {loading
+              ? [...Array(6)].map((_,i) => <NovelCardSkeleton key={i}/>)
+              : recentlyAdded.map(n => <NovelCard key={n._id} novel={n}/>)
+            }
+          </div>
+        </section>
 
-          {/* Recently Added — scroll row on mobile */}
-          <section className="home-section">
-            <div className="section-title">
-              <span>✨</span> Recently Added
-              <Link to="/browse?sort=new" className="section-see-all">See All →</Link>
-            </div>
-            <div className={isMobile ? "scroll-row" : "novel-grid novel-grid-2"}>
-              {loading
-                ? [...Array(4)].map((_,i) => <NovelCardSkeleton key={i}/>)
-                : recentlyAdded.map(n => <NovelCard key={n._id} novel={n}/>)
-              }
-            </div>
-          </section>
-        </div>
+        {/* Latest Updates — at the bottom, with list/grid toggle */}
+        <LatestUpdates latestAll={latestAll} loading={loading} isMobile={isMobile} />
+
       </div>
     </div>
   );
