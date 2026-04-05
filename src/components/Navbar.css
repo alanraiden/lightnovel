@@ -71,7 +71,7 @@
 
 .navbar-search {
   flex: 1;
-  max-width: 300px;
+  max-width: 100%;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -511,4 +511,193 @@
   .login-modal { padding: 28px 20px 20px; border-radius: 16px; }
   .modal-backdrop { padding: 12px; align-items: flex-end; }
   .login-modal { max-height: 95vh; }
+}
+
+/* ── Autocomplete search ────────────────────────────────────────────────────── */
+.search-autocomplete-wrap {
+  position: relative;
+  flex: 1;
+  max-width: 300px;
+}
+
+/* Clear (×) button inside search input */
+.search-clear-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+.search-clear-btn:hover { color: var(--text-primary); }
+
+/* Dropdown container */
+.search-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: var(--bg-elevated, #1a1a2e);
+  border: 1px solid var(--border-accent, rgba(139,92,246,0.4));
+  border-radius: 10px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(139,92,246,0.1);
+  overflow: hidden;
+  z-index: 9999;
+  animation: dropdownIn 0.15s ease;
+}
+
+@keyframes dropdownIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Loading state */
+.search-dropdown-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+}
+
+.search-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(139,92,246,0.2);
+  border-top-color: var(--accent-purple);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Empty state */
+.search-dropdown-empty {
+  padding: 14px 16px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+/* Each suggestion row */
+.search-suggestion {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 9px 14px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s;
+}
+.search-suggestion:last-of-type { border-bottom: none; }
+.search-suggestion:hover,
+.search-suggestion.active {
+  background: rgba(139,92,246,0.1);
+}
+
+.suggestion-cover {
+  width: 32px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.suggestion-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.suggestion-title {
+  font-family: var(--font-display);
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 3px;
+}
+
+.suggestion-highlight {
+  background: rgba(255,107,43,0.25);
+  color: var(--accent-orange);
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+.suggestion-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.suggestion-ch {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--accent-blue);
+  font-weight: 600;
+}
+
+.suggestion-genre {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  background: rgba(139,92,246,0.08);
+  border: 1px solid rgba(139,92,246,0.15);
+  border-radius: 100px;
+  padding: 1px 6px;
+}
+
+.suggestion-status {
+  flex-shrink: 0;
+  font-size: 0.62rem;
+}
+
+/* "See all results" footer button */
+.search-see-all {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 16px;
+  background: rgba(139,92,246,0.06);
+  border: none;
+  border-top: 1px solid var(--border);
+  color: var(--accent-purple);
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  cursor: pointer;
+  transition: background 0.15s;
+  text-align: left;
+}
+.search-see-all:hover { background: rgba(139,92,246,0.12); }
+
+/* Mobile: make dropdown full-width and adjust for mobile menu */
+@media (max-width: 768px) {
+  .search-autocomplete-wrap {
+    max-width: 100%;
+    width: 100%;
+  }
+  .search-dropdown {
+    border-radius: 8px;
+  }
+  /* Ensure dropdown shows above mobile menu links */
+  .mobile-menu .search-autocomplete-wrap {
+    z-index: 10000;
+  }
 }

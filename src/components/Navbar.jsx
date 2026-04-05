@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { googleLogin, emailLogin, emailSignup } from '../services/api';
+import { googleLogin, emailLogin, emailSignup, getNovels } from '../services/api';
 import './Navbar.css';
 
 // ── Auth Modal ────────────────────────────────────────────────────────────────
@@ -196,22 +196,177 @@ function AuthModal({ onClose, loginWithToken }) {
   );
 }
 
+// ── Autocomplete Search ───────────────────────────────────────────────────────
+function SearchBar({ onNavigate }) {
+  const [query,       setQuery]       = useState('');
+  const [suggestions, setSuggestions] = useState([]);
+  const [loading,     setLoading]     = useState(false);
+  const [focused,     setFocused]     = useState(false);
+  const [activeIdx,   setActiveIdx]   = useState(-1);
+  const debounceRef  = useRef(null);
+  const wrapRef      = useRef(null);
+  const inputRef     = useRef(null);
+  const navigate     = useNavigate();
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function onClickOutside(e) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) {
+        setFocused(false);
+        setSuggestions([]);
+      }
+    }
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, []);
+
+  function handleChange(e) {
+    const val = e.target.value;
+    setQuery(val);
+    setActiveIdx(-1);
+
+    clearTimeout(debounceRef.current);
+    if (!val.trim()) { setSuggestions([]); setLoading(false); return; }
+
+    setLoading(true);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const res = await getNovels({ search: val.trim(), limit: 7 });
+        setSuggestions(res.novels || []);
+      } catch { setSuggestions([]); }
+      setLoading(false);
+    }, 280);
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (!query.trim()) return;
+    setSuggestions([]);
+    setFocused(false);
+    navigate('/browse?q=' + encodeURIComponent(query.trim()));
+    setQuery('');
+    onNavigate?.();
+  }
+
+  function handleSelect(novel) {
+    setSuggestions([]);
+    setFocused(false);
+    setQuery('');
+    const href = novel.slug ? '/novel/s/' + novel.slug : '/novel/' + novel._id;
+    navigate(href);
+    onNavigate?.();
+  }
+
+  function handleKeyDown(e) {
+    if (!suggestions.length) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActiveIdx(i => Math.min(i + 1, suggestions.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActiveIdx(i => Math.max(i - 1, -1));
+    } else if (e.key === 'Enter' && activeIdx >= 0) {
+      e.preventDefault();
+      handleSelect(suggestions[activeIdx]);
+    } else if (e.key === 'Escape') {
+      setSuggestions([]);
+      setFocused(false);
+    }
+  }
+
+  const showDropdown = focused && query.trim().length > 0 && (loading || suggestions.length > 0);
+
+  return (
+    <div className="search-autocomplete-wrap" ref={wrapRef}>
+      <form className="navbar-search" onSubmit={handleSubmit}>
+        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input
+          ref={inputRef}
+          type="text"
+          placeholder="Search novels..."
+          value={query}
+          onChange={handleChange}
+          onFocus={() => setFocused(true)}
+          onKeyDown={handleKeyDown}
+          autoComplete="off"
+        />
+        {query && (
+          <button type="button" className="search-clear-btn" onClick={() => { setQuery(''); setSuggestions([]); inputRef.current?.focus(); }}>
+            <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        )}
+      </form>
+
+      {showDropdown && (
+        <div className="search-dropdown">
+          {loading && suggestions.length === 0 && (
+            <div className="search-dropdown-loading">
+              <div className="search-spinner"/>
+              Searching…
+            </div>
+          )}
+          {!loading && suggestions.length === 0 && query.trim() && (
+            <div className="search-dropdown-empty">No results for "{query}"</div>
+          )}
+          {suggestions.map((n, i) => (
+            <button
+              key={n._id}
+              className={`search-suggestion${i === activeIdx ? ' active' : ''}`}
+              onMouseDown={() => handleSelect(n)}
+              onMouseEnter={() => setActiveIdx(i)}
+            >
+              <img
+                src={n.cover || 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=40&h=56&fit=crop'}
+                alt=""
+                className="suggestion-cover"
+                onError={e => { e.target.src = 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=40&h=56&fit=crop'; }}
+              />
+              <div className="suggestion-info">
+                <div className="suggestion-title">{highlightMatch(n.title, query)}</div>
+                <div className="suggestion-meta">
+                  {n.chapterCount > 0 && <span className="suggestion-ch">Ch.{n.chapterCount}</span>}
+                  {(n.genres || []).slice(0, 2).map(g => (
+                    <span key={g} className="suggestion-genre">{g}</span>
+                  ))}
+                </div>
+              </div>
+              <span className={`suggestion-status badge badge-${n.status}`}>{n.status}</span>
+            </button>
+          ))}
+          {suggestions.length > 0 && (
+            <button className="search-see-all" onMouseDown={handleSubmit}>
+              <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              See all results for "{query}"
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function highlightMatch(text, query) {
+  if (!query) return text;
+  const idx = text.toLowerCase().indexOf(query.toLowerCase());
+  if (idx === -1) return text;
+  return (
+    <>
+      {text.slice(0, idx)}
+      <mark className="suggestion-highlight">{text.slice(idx, idx + query.length)}</mark>
+      {text.slice(idx + query.length)}
+    </>
+  );
+}
+
 // ── Navbar ────────────────────────────────────────────────────────────────────
 export default function Navbar() {
   const { user, loginWithToken, logout } = useAuth();
-  const [searchQuery, setSearchQuery]   = useState('');
   const [mobileOpen, setMobileOpen]     = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [showAuth, setShowAuth]         = useState(false);
   const navigate = useNavigate();
-
-  function handleSearch(e) {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate('/browse?q=' + encodeURIComponent(searchQuery));
-      setSearchQuery('');
-    }
-  }
 
   return (
     <>
@@ -235,13 +390,7 @@ export default function Navbar() {
             <Link to="/updates"  className="nav-link">Updates</Link>
           </div>
 
-          <form className="navbar-search" onSubmit={handleSearch}>
-            <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-            <input
-              type="text" placeholder="Search novels..."
-              value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-            />
-          </form>
+          <SearchBar onNavigate={() => setMobileOpen(false)} />
 
           <div className="navbar-actions">
             <a href="https://ko-fi.com/idenwebstudio" target="_blank" rel="noopener noreferrer" className="kofi-btn">
@@ -268,10 +417,6 @@ export default function Navbar() {
                     {user.role === 'admin' && (
                       <Link to="/dashboard" onClick={() => setUserMenuOpen(false)}>Dashboard</Link>
                     )}
-                    <Link to="/bookmarks" onClick={() => setUserMenuOpen(false)} style={{display:'flex', alignItems:'center', gap:'8px'}}>
-                      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-                      My Bookmarks
-                    </Link>
                     <div className="dropdown-divider"/>
                     <button className="dropdown-logout" onClick={() => { logout(); setUserMenuOpen(false); }}>Sign Out</button>
                   </div>
@@ -293,10 +438,7 @@ export default function Navbar() {
         {mobileOpen && (
           <div className="mobile-menu">
             <div className="container">
-              <form className="mobile-search" onSubmit={handleSearch}>
-                <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                <input type="text" placeholder="Search..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
-              </form>
+              <SearchBar onNavigate={() => setMobileOpen(false)} />
               <Link to="/"         className="mobile-nav-link" onClick={() => setMobileOpen(false)}>Home</Link>
               <Link to="/browse"   className="mobile-nav-link" onClick={() => setMobileOpen(false)}>Browse</Link>
               <Link to="/genres"   className="mobile-nav-link" onClick={() => setMobileOpen(false)}>Genres</Link>
@@ -304,9 +446,6 @@ export default function Navbar() {
               <Link to="/updates"  className="mobile-nav-link" onClick={() => setMobileOpen(false)}>Updates</Link>
               {user?.role === 'admin' && (
                 <Link to="/dashboard" className="mobile-nav-link" onClick={() => setMobileOpen(false)}>Dashboard</Link>
-              )}
-              {user && (
-                <Link to="/bookmarks" className="mobile-nav-link" onClick={() => setMobileOpen(false)}>🔖 My Bookmarks</Link>
               )}
             </div>
           </div>
