@@ -741,10 +741,20 @@
   width: 100%;
 }
 
+/* Force the search form visible inside the mobile panel —
+   the global @media (max-width: 600px) rule hides .navbar-search,
+   so we override it here explicitly. */
+.mobile-search-bar .navbar-search {
+  display: flex;
+  max-width: 100%;
+  width: 100%;
+}
+
 /* Ensure dropdown is wide enough on mobile */
 .mobile-search-bar .search-dropdown {
   left: 0;
   right: 0;
+  width: 100%;
 }
 
 @media (max-width: 768px) {
