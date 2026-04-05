@@ -363,9 +363,10 @@ function highlightMatch(text, query) {
 // ── Navbar ────────────────────────────────────────────────────────────────────
 export default function Navbar() {
   const { user, loginWithToken, logout } = useAuth();
-  const [mobileOpen, setMobileOpen]     = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [showAuth, setShowAuth]         = useState(false);
+  const [mobileOpen, setMobileOpen]         = useState(false);
+  const [mobileSearchOpen, setMobileSearch] = useState(false);
+  const [userMenuOpen, setUserMenuOpen]     = useState(false);
+  const [showAuth, setShowAuth]             = useState(false);
   const navigate = useNavigate();
 
   return (
@@ -429,11 +430,25 @@ export default function Navbar() {
               </button>
             )}
 
-            <button className="mobile-menu-btn" onClick={() => setMobileOpen(o => !o)}>
+            <button className="mobile-search-btn" onClick={() => { setMobileSearch(o => !o); setMobileOpen(false); }} aria-label="Search">
+              {mobileSearchOpen
+                ? <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                : <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              }
+            </button>
+            <button className="mobile-menu-btn" onClick={() => { setMobileOpen(o => !o); setMobileSearch(false); }}>
               <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
             </button>
           </div>
         </div>
+
+        {mobileSearchOpen && (
+          <div className="mobile-search-bar">
+            <div className="container">
+              <SearchBar onNavigate={() => setMobileSearch(false)} />
+            </div>
+          </div>
+        )}
 
         {mobileOpen && (
           <div className="mobile-menu">

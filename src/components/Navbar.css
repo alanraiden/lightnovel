@@ -701,3 +701,52 @@
     z-index: 10000;
   }
 }
+
+/* ── Mobile search button (icon in navbar bar) ──────────────────────────────── */
+.mobile-search-btn {
+  display: none; /* hidden on desktop */
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.mobile-search-btn:hover,
+.mobile-search-btn:focus {
+  border-color: var(--accent-purple);
+  color: var(--text-primary);
+}
+
+/* ── Mobile search panel (slides in below navbar) ───────────────────────────── */
+.mobile-search-bar {
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 0;
+  animation: slideDown 0.18s ease;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.mobile-search-bar .search-autocomplete-wrap {
+  max-width: 100%;
+  width: 100%;
+}
+
+/* Ensure dropdown is wide enough on mobile */
+.mobile-search-bar .search-dropdown {
+  left: 0;
+  right: 0;
+}
+
+@media (max-width: 768px) {
+  .mobile-search-btn { display: flex; }
+}
