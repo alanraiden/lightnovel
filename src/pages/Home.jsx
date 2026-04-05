@@ -77,15 +77,13 @@ function HeroSlider({ novels, loading }) {
 
   useEffect(() => {
     if (!novels.length) return;
-    if (window.matchMedia('(max-width: 600px)').matches) return;
-    timerRef.current = setInterval(next, 5000);
+    timerRef.current = setInterval(next, 9000);
     return () => clearInterval(timerRef.current);
   }, [next, novels.length]);
 
   const pause  = () => clearInterval(timerRef.current);
   const resume = () => {
-    if (window.matchMedia('(max-width: 600px)').matches) return;
-    timerRef.current = setInterval(next, 5000);
+    timerRef.current = setInterval(next, 9000);
   };
 
   const onTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; pause(); };
@@ -444,25 +442,27 @@ export default function Home() {
   useEffect(() => {
     async function load() {
       try {
-        const [byViews, byRating, byNew, byAdded] = await Promise.all([
+        const [byWeek, byAllViews, byRating, byNew, byAdded] = await Promise.all([
+          getNovels({ sort: 'week',   limit: 12 }),
           getNovels({ sort: 'views',  limit: 12 }),
           getNovels({ sort: 'rating', limit: 12 }),
           getNovels({ sort: 'new',    limit: 50 }),
           getNovels({ sort: 'added',  limit: 12 }),
         ]);
-        const trendNovels = byViews.novels  || [];
-        const ratedNovels = byRating.novels || [];
-        const newNovels   = byNew.novels    || [];
-        const addedNovels = byAdded.novels  || [];
+        const trendNovels = byWeek.novels    || [];
+        const allNovels   = byAllViews.novels || [];
+        const ratedNovels = byRating.novels  || [];
+        const newNovels   = byNew.novels     || [];
+        const addedNovels = byAdded.novels   || [];
 
         const seen = new Set();
         const feat = [];
-        for (const n of [...ratedNovels, ...trendNovels]) {
+        for (const n of [...ratedNovels, ...allNovels]) {
           if (!seen.has(n._id) && feat.length < 9) { seen.add(n._id); feat.push(n); }
         }
         setFeatured(feat);
         setTrending(trendNovels.slice(0, 12));
-        setTrendCache({ all: trendNovels.slice(0, 12) });
+        setTrendCache({ week: trendNovels.slice(0, 12), all: allNovels.slice(0, 12) });
         setTopRated(ratedNovels.slice(0, 12));
         setLatestAll(newNovels);
         setRecent(addedNovels.slice(0, 12));
@@ -480,10 +480,8 @@ export default function Home() {
     setTrendLoading(true);
     setTrendTab(tab);
     try {
-      const sinceMap = { today: 1, week: 7, month: 30, all: null };
-      const params = { sort: 'views', limit: 12 };
-      if (sinceMap[tab]) params.since = sinceMap[tab];
-      const res = await getNovels(params);
+      const sortMap = { today: 'today', week: 'week', month: 'month', all: 'views' };
+      const res = await getNovels({ sort: sortMap[tab] || 'views', limit: 12 });
       const novels = res.novels || [];
       setTrending(novels);
       setTrendCache(prev => ({ ...prev, [tab]: novels }));

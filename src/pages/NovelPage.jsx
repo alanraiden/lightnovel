@@ -121,7 +121,7 @@ export default function NovelPage() {
   const novelUrl  = novel?.slug ? `/novel/s/${novel.slug}` : `/novel/${novel?._id}`;
   const novelDesc = novel?.description
     ? novel.description.slice(0, 155)
-    : `Read ${novel?.title} by ${novel?.author} on idenwebstudio. ${novel?.chapterCount || chapters.length} chapters available.`;
+    : `Read ${novel?.title} by ${novel?.author} on idenwebstudio. ${chapters.length || novel?.chapterCount} chapters available.`;
 
   return (
     <div className="novel-page">
@@ -200,7 +200,7 @@ export default function NovelPage() {
               </div>
               <div className="novel-stat-divider"/>
               <div className="novel-stat">
-                <div className="novel-stat-value">{novel.chapterCount || chapters.length}</div>
+                <div className="novel-stat-value">{chapters.length || novel.chapterCount}</div>
                 <div className="novel-stat-label">Chapters</div>
               </div>
             </div>
