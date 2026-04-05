@@ -123,7 +123,60 @@ function HeroSlider({ novels, loading }) {
 
   if (!novels.length) return null;
   const hero = novels[current];
+  const heroUrl = hero.slug ? `/novel/s/${hero.slug}` : `/novel/${hero._id}`;
 
+  // ── Mobile: compact card layout ──────────────────────────────────────────
+  if (window.matchMedia('(max-width: 600px)').matches) {
+    return (
+      <section className="hero-mobile-section" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+        <div className="hero-mobile-label">
+          <span className="hero-badge-dot"/>
+          Featured Novel
+        </div>
+        <Link to={heroUrl} className={`hero-mobile-card ${animating ? 'hero-fade' : ''}`}>
+          <div className="hero-mobile-text">
+            <h2 className="hero-mobile-title">{hero.title}</h2>
+            <div className="hero-mobile-stats">
+              <span>{hero.chapterCount} Ch.</span>
+              <span className="hero-stat-sep">·</span>
+              <span>{hero.views?.toLocaleString()} Views</span>
+            </div>
+            <div className="hero-mobile-rating">
+              {[1,2,3,4,5].map(i => (
+                <svg key={i} width="11" height="11" viewBox="0 0 24 24" fill={i <= Math.floor(hero.rating) ? 'var(--accent-gold)' : 'var(--text-muted)'}>
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+              ))}
+              <span>{hero.rating}</span>
+            </div>
+            <p className="hero-mobile-desc">{hero.description}</p>
+          </div>
+          <div className="hero-mobile-right">
+            <div className="hero-mobile-cover">
+              <img
+                src={hero.cover || PLACEHOLDER}
+                alt={hero.title}
+                onError={e => { e.target.src = PLACEHOLDER; }}
+              />
+            </div>
+            <div className="hero-mobile-read-btn">
+              <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+              Start Reading
+            </div>
+          </div>
+        </Link>
+        {novels.length > 1 && (
+          <div className="hero-dots hero-mobile-dots">
+            {novels.map((_, i) => (
+              <button key={i} className={`hero-dot ${i === current ? 'active' : ''}`} onClick={() => goTo(i)} aria-label={`Slide ${i+1}`}/>
+            ))}
+          </div>
+        )}
+      </section>
+    );
+  }
+
+  // ── Desktop: full hero slider ─────────────────────────────────────────────
   return (
     <section
       className="hero hero-slider"
@@ -163,11 +216,11 @@ function HeroSlider({ novels, loading }) {
         </div>
         <p className="hero-description">{hero.description}</p>
         <div className="hero-actions">
-          <Link to={hero.slug ? `/novel/s/${hero.slug}` : `/novel/${hero._id}`} className="btn-primary">
+          <Link to={heroUrl} className="btn-primary">
             <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
             Start Reading
           </Link>
-          <Link to={hero.slug ? `/novel/s/${hero.slug}` : `/novel/${hero._id}`} className="btn-secondary">View Details</Link>
+          <Link to={heroUrl} className="btn-secondary">View Details</Link>
         </div>
       </div>
 
