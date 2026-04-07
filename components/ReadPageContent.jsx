@@ -17,7 +17,7 @@ const FONT_FAMILIES = [
 ];
 const PLACEHOLDER = 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=400&h=600&fit=crop';
 
-export default function ReadPageContent() {
+export default function ReadPageContent({ ssrNovel = null, ssrChapter = null }) {
   const params = useParams();
   const router = useRouter();
 
@@ -30,10 +30,11 @@ export default function ReadPageContent() {
   const rawNum = chapterSlug || chapterNum || '1';
   const num = parseInt(String(rawNum).replace(/[^0-9]/g, '')) || 1;
 
-  const [novel,    setNovel]    = useState(null);
-  const [chapter,  setChapter]  = useState(null);
+  // Use SSR-provided data as initial state so content is immediately visible
+  const [novel,    setNovel]    = useState(ssrNovel);
+  const [chapter,  setChapter]  = useState(ssrChapter);
   const [chapters, setChapters] = useState([]);
-  const [loading,  setLoading]  = useState(true);
+  const [loading,  setLoading]  = useState(!ssrNovel || !ssrChapter);
   const [error,    setError]    = useState('');
   const [similar,  setSimilar]  = useState([]);
 

@@ -1,6 +1,8 @@
 const BASE = 'https://idenwebstudio.online';
 const API  = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
+const GENRES = ['Action','Adventure','Comedy','Drama','Fantasy','Harem','Historical','Horror','Isekai','Josei','Martial Arts','Mecha','Mystery','Psychological','Romance','School Life','Sci-Fi','Slice of Life','Sports','Supernatural','System','Tragedy','Wuxia','Xianxia','Xuanhuan'];
+
 export default async function sitemap() {
   const staticPages = [
     { url: BASE,               changeFrequency: 'daily',   priority: 1.0 },
@@ -9,6 +11,13 @@ export default async function sitemap() {
     { url: `${BASE}/genres`,   changeFrequency: 'monthly', priority: 0.6 },
     { url: `${BASE}/updates`,  changeFrequency: 'daily',   priority: 0.8 },
   ];
+
+  // Genre landing pages — each one targets "[genre] web novels" keyword
+  const genrePages = GENRES.map(g => ({
+    url: `${BASE}/genre/${g.toLowerCase().replace(/\s+/g, '-')}`,
+    changeFrequency: 'weekly',
+    priority: 0.7,
+  }));
 
   try {
     const { novels } = await fetch(`${API}/novels?limit=1000&sort=new`).then(r => r.json());
@@ -23,8 +32,8 @@ export default async function sitemap() {
 
     const chapterPages = [];
     for (const novel of validNovels.filter(n => n.chapterCount > 0)) {
-      const limit = Math.min(novel.chapterCount, 50);
-      for (let i = 1; i <= limit; i++) {
+      // No cap — all chapters indexed (was incorrectly capped at 50 before)
+      for (let i = 1; i <= novel.chapterCount; i++) {
         chapterPages.push({
           url: `${BASE}/read/s/${novel.slug}/chapter-${i}`,
           changeFrequency: 'monthly',
@@ -33,8 +42,8 @@ export default async function sitemap() {
       }
     }
 
-    return [...staticPages, ...novelPages, ...chapterPages];
+    return [...staticPages, ...genrePages, ...novelPages, ...chapterPages];
   } catch {
-    return staticPages;
+    return [...staticPages, ...genrePages];
   }
 }

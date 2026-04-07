@@ -12,6 +12,7 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }) {
   try {
     const novel = await getNovelBySlugServer(params.slug);
+    // Meta description capped at 160 chars (correct for search snippets)
     const desc = novel.description?.slice(0, 160) || `Read ${novel.title} by ${novel.author} free online at idenwebstudio.`;
     return {
       title: `${novel.title} | Read Free at idenwebstudio`,
@@ -32,18 +33,24 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function NovelPage({ params }) {
+  let novel = null;
   let jsonLd = null;
+  let breadcrumbLd = null;
+
   try {
-    const novel = await getNovelBySlugServer(params.slug);
+    novel = await getNovelBySlugServer(params.slug);
+
+    // Book JSON-LD — use FULL description (not truncated to 160 chars)
     jsonLd = {
       '@context': 'https://schema.org',
       '@type': 'Book',
       name: novel.title,
       author: { '@type': 'Person', name: novel.author || 'Unknown' },
-      description: novel.description?.slice(0, 160),
+      description: novel.description || undefined,  // Full description for richer entity understanding
       image: novel.cover,
       url: `https://idenwebstudio.online/novel/s/${params.slug}`,
       genre: (novel.genres || []).join(', ') || undefined,
+      numberOfPages: novel.chapterCount || undefined,
       aggregateRating: novel.rating ? {
         '@type': 'AggregateRating',
         ratingValue: novel.rating,
@@ -51,6 +58,16 @@ export default async function NovelPage({ params }) {
         bestRating: 5,
         worstRating: 1,
       } : undefined,
+    };
+
+    // BreadcrumbList for site hierarchy and search result breadcrumb display
+    breadcrumbLd = {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://idenwebstudio.online' },
+        { '@type': 'ListItem', position: 2, name: novel.title, item: `https://idenwebstudio.online/novel/s/${params.slug}` },
+      ],
     };
   } catch {}
 
@@ -62,7 +79,22 @@ export default async function NovelPage({ params }) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       )}
-      <NovelPageContent />
+      {breadcrumbLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+        />
+      )}
+      {/* SSR the H1 + description so crawlers see them in initial HTML */}
+      {novel && (
+        <noscript>
+          <h1>{novel.title}</h1>
+          {novel.author && <p>By {novel.author}</p>}
+          {novel.description && <p>{novel.description}</p>}
+          {novel.genres?.length > 0 && <p>Genres: {novel.genres.join(', ')}</p>}
+        </noscript>
+      )}
+      <NovelPageContent ssrNovel={novel} />
     </>
   );
 }

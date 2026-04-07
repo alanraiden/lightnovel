@@ -42,7 +42,7 @@ function StarPicker({ value, onChange }) {
   );
 }
 
-export default function NovelPageContent() {
+export default function NovelPageContent({ ssrNovel = null }) {
   const params   = useParams();
   const router   = useRouter();
   const { user } = useAuth();
@@ -51,9 +51,9 @@ export default function NovelPageContent() {
   const slug = params.slug || null;
   const id   = params.id   || null;
 
-  const [novel, setNovel]       = useState(null);
+  const [novel, setNovel]       = useState(ssrNovel);
   const [chapters, setChapters] = useState([]);
-  const [loading, setLoading]   = useState(true);
+  const [loading, setLoading]   = useState(!ssrNovel);
   const [activeTab, setActiveTab]   = useState('chapters');
   const [bookmarked, setBookmarked] = useState(false);
   const [userRating, setUserRating] = useState(0);
