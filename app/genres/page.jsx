@@ -9,14 +9,11 @@ export const metadata = {
 export default function GenresPage() {
   return (
     <>
-      {/* Static SEO content — crawlable H1 and body text */}
-      <noscript>
-        <h1>Browse Korean Web Novels by Genre</h1>
-        <p>
-          Explore our full library of Korean web novels and light novels organized by genre.
-          From action and fantasy to romance and isekai — find exactly the kind of story you want to read.
-        </p>
-      </noscript>
+      {/* Static H1 crawlable before JS hydrates */}
+      <div style={{ position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap' }}>
+        <h1>Korean Web Novel Genres</h1>
+        <p>Browse Korean web novels and light novels by genre. Choose from fantasy, isekai, romance, action, martial arts, psychological, horror, historical, system and many more genres.</p>
+      </div>
       <GenresContent />
     </>
   );

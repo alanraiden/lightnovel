@@ -9,15 +9,11 @@ export const metadata = {
 export default function RankingsPage() {
   return (
     <>
-      {/* Static SEO content — crawlable H1 and body text */}
-      <noscript>
+      {/* Static H1 visible to crawlers before JS hydrates */}
+      <div style={{ position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap' }}>
         <h1>Top Ranked Korean Web Novels</h1>
-        <p>
-          Discover the highest-rated and most-read Korean web novels and light novels.
-          Our rankings are updated weekly based on reader ratings, views, and engagement.
-          Find the best novels to start reading today.
-        </p>
-      </noscript>
+        <p>Discover the highest rated and most viewed Korean web novels and light novels. Rankings updated daily based on reader ratings, views, and chapter counts.</p>
+      </div>
       <RankingsContent />
     </>
   );

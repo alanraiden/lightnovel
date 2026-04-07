@@ -9,15 +9,11 @@ export const metadata = {
 export default function BrowsePage() {
   return (
     <>
-      {/* Static SEO content — crawlable H1 and body text */}
-      <noscript>
+      {/* Static H1 + intro visible to crawlers before JS hydrates */}
+      <div style={{ position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap' }}>
         <h1>Browse Korean Web Novels</h1>
-        <p>
-          Discover hundreds of Korean web novels and light novels, all free to read online.
-          Filter by genre, completion status, and rating to find your next favorite story.
-          New novels and chapters added daily.
-        </p>
-      </noscript>
+        <p>Browse hundreds of Korean web novels and light novels. Filter by genre — fantasy, isekai, romance, action, martial arts and more — by status, and by rating. New chapters added daily.</p>
+      </div>
       <BrowseContent />
     </>
   );

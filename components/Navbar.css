@@ -505,7 +505,9 @@
   .logo-text { font-size: 0.95rem; }
   .logo-icon { width: 30px; height: 30px; }
   .kofi-btn { padding: 6px 10px; }
-  .sign-in-btn { padding: 6px 10px; font-size: 0.68rem; }
+  /* Hide sign-in btn and avatar from top bar — they live in the mobile drawer */
+  .sign-in-btn { display: none; }
+  .user-menu-wrap { display: none; }
   .mobile-menu { padding: 12px 0; }
   .mobile-nav-link { padding: 13px 4px; font-size: 0.9rem; }
   .login-modal { padding: 28px 20px 20px; border-radius: 16px; }
@@ -513,6 +515,71 @@
   .login-modal { max-height: 95vh; }
 }
 
+/* Mobile menu profile section */
+.mobile-menu-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 8px 0 12px;
+}
+
+.mobile-user-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px 0 8px;
+}
+
+.mobile-user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.mobile-signin-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 13px 16px;
+  background: rgba(139, 92, 246, 0.12);
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  border-radius: var(--radius);
+  color: var(--accent-purple);
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.mobile-signin-btn:hover {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: var(--accent-purple);
+}
+
+.mobile-signout-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: var(--radius);
+  color: #ef4444;
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  width: fit-content;
+}
+
+.mobile-signout-btn:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: #ef4444;
+}
 /* ── Autocomplete search ────────────────────────────────────────────────────── */
 .search-autocomplete-wrap {
   position: relative;
