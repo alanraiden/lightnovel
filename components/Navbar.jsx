@@ -337,6 +337,10 @@ export default function Navbar() {
                     {user.role === 'admin' && (
                       <Link href="/dashboard" onClick={() => setUserMenuOpen(false)}>Dashboard</Link>
                     )}
+                    <Link href="/bookmarks" onClick={() => setUserMenuOpen(false)} style={{display:'flex',alignItems:'center',gap:'8px'}}>
+                      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                      My Bookmarks
+                    </Link>
                     <div className="dropdown-divider"/>
                     <button className="dropdown-logout" onClick={() => { logout(); setUserMenuOpen(false); }}>Sign Out</button>
                   </div>
@@ -379,38 +383,8 @@ export default function Navbar() {
               {user?.role === 'admin' && (
                 <Link href="/dashboard" className="mobile-nav-link" onClick={() => setMobileOpen(false)}>Dashboard</Link>
               )}
-
-              {/* ── Profile / Sign-in inside mobile drawer ── */}
-              <div className="mobile-menu-divider" />
-              {user ? (
-                <div className="mobile-user-section">
-                  <div className="mobile-user-info">
-                    {user.avatar
-                      ? <img src={user.avatar} alt={user.name} className="user-avatar-img" referrerPolicy="no-referrer" style={{width:38,height:38,borderRadius:'50%',objectFit:'cover',border:'2px solid var(--border-accent)'}}/>
-                      : <div className="user-avatar-placeholder" style={{width:38,height:38,fontSize:'1rem'}}>{user.name?.[0]?.toUpperCase()}</div>
-                    }
-                    <div>
-                      <div style={{fontFamily:'var(--font-display)',fontWeight:600,color:'var(--text-primary)',fontSize:'0.9rem'}}>{user.name}</div>
-                      <div style={{fontFamily:'var(--font-mono)',fontSize:'0.7rem',color:'var(--text-muted)'}}>{user.email}</div>
-                      <div style={{fontFamily:'var(--font-mono)',fontSize:'0.65rem',color:'var(--accent-purple)',textTransform:'uppercase',marginTop:'2px'}}>{user.role}</div>
-                    </div>
-                  </div>
-                  <button
-                    className="mobile-signout-btn"
-                    onClick={() => { logout(); setMobileOpen(false); }}
-                  >
-                    <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                    Sign Out
-                  </button>
-                </div>
-              ) : (
-                <button
-                  className="mobile-signin-btn"
-                  onClick={() => { setMobileOpen(false); setShowAuth(true); }}
-                >
-                  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                  Sign In / Create Account
-                </button>
+              {user && (
+                <Link href="/bookmarks" className="mobile-nav-link" onClick={() => setMobileOpen(false)}>🔖 My Bookmarks</Link>
               )}
             </div>
           </div>

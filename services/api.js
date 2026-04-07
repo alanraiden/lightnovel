@@ -81,3 +81,8 @@ async function serverFetch(path) {
 export const getNovelBySlugServer = (slug) => serverFetch(`/novels/slug/${slug}`);
 export const getNovelServer       = (id)   => serverFetch(`/novels/${id}`);
 export const getChapterServer     = (novelId, num) => serverFetch(`/novels/${novelId}/chapters/${num}`);
+
+// ── Announcements ─────────────────────────────────────────────────────────────
+export const getAnnouncement    = () => req('/announcement');
+export const saveAnnouncement   = (data) => req('/announcement', { method: 'POST', body: JSON.stringify(data) });
+export const deleteAnnouncement = () => req('/announcement', { method: 'DELETE' });

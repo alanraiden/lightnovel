@@ -1,6 +1,7 @@
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 import Script from 'next/script';
+import AnnouncementBanner from '@/components/AnnouncementBanner';
 
 
 export const metadata = {
@@ -28,6 +29,7 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         <AuthProvider>{children}</AuthProvider>
+        <AnnouncementBanner />
         {/* Google AdSense — loaded after page is interactive */}
         <Script
           async
