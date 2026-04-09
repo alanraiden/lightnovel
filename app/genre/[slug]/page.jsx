@@ -126,6 +126,31 @@ export default async function GenrePage({ params }) {
                 ))}
               </div>
             </div>
+
+            {/* Best-of cross-links — crawlable internal links to curated list pages */}
+            <div style={{ marginTop: '24px', padding: '24px', background: 'var(--bg-card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)' }}>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', marginBottom: '14px', letterSpacing: '0.08em' }}>
+                CURATED READING LISTS
+              </h2>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                {[
+                  { href: '/best/regression-novels', label: 'Best Regression Novels' },
+                  { href: '/best/op-mc-novels', label: 'Overpowered MC' },
+                  { href: '/best/completed-novels', label: 'Completed Novels' },
+                  { href: '/best/dungeon-novels', label: 'Dungeon Novels' },
+                  { href: '/best/villainess-novels', label: 'Villainess Novels' },
+                ].map(({ href, label }) => (
+                  <Link key={href} href={href} style={{
+                    padding: '7px 14px', border: '1px solid var(--border-accent)',
+                    borderRadius: '999px', fontSize: '0.78rem',
+                    color: 'var(--text-secondary)', textDecoration: 'none',
+                    fontFamily: 'var(--font-mono)', background: 'rgba(139,92,246,0.05)',
+                  }}>
+                    {label}
+                  </Link>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </PageLayout>

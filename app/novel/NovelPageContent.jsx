@@ -286,6 +286,35 @@ export default function NovelPageContent({ ssrNovel = null }) {
           <AdBanner slot="NOVEL_PAGE_AD_SLOT_ID" format="horizontal"/>
         </div>
 
+        {/* "More like this" internal link — feeds SEO crawl path */}
+        {novel.slug && (
+          <div className="container" style={{paddingBottom:'8px'}}>
+            <div style={{
+              padding:'20px 24px', background:'var(--bg-card)',
+              border:'1px solid var(--border)', borderRadius:'var(--radius-lg)',
+              display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:'12px'
+            }}>
+              <div>
+                <div style={{fontFamily:'var(--font-mono)', fontSize:'0.72rem', color:'var(--text-muted)', marginBottom:'4px', letterSpacing:'0.08em'}}>
+                  ENJOYED THIS NOVEL?
+                </div>
+                <div style={{fontFamily:'var(--font-display)', fontSize:'1rem', color:'var(--text-primary)'}}>
+                  Find similar reads to {novel.title}
+                </div>
+              </div>
+              <Link href={`/novels-like/${novel.slug}`} style={{
+                display:'inline-flex', alignItems:'center', gap:'6px',
+                padding:'9px 20px', background:'rgba(139,92,246,0.15)',
+                border:'1px solid var(--border-accent)', borderRadius:'var(--radius)',
+                fontFamily:'var(--font-mono)', fontSize:'0.8rem', color:'var(--accent-purple)',
+                textDecoration:'none',
+              }}>
+                Novels Like This →
+              </Link>
+            </div>
+          </div>
+        )}
+
         <div className="container" style={{paddingBottom:'80px'}}>
           <CommentSection novelId={novel._id}/>
         </div>
