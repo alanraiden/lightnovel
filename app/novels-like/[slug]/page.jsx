@@ -1,24 +1,39 @@
 import Link from 'next/link';
 import PageLayout from '@/components/PageLayout';
 import NovelCard from '@/components/NovelCard';
-import { SIMILAR_DATA, SIMILAR_SLUGS } from '../data';
+import { SIMILAR_DATA } from '../data';
 
 const BASE_URL = 'https://idenwebstudio.online';
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 export const dynamic = 'force-dynamic';
 
+// Fetch the novel itself by slug to get its title (used when slug isn't in SIMILAR_DATA)
+async function fetchNovelBySlug(slug) {
+  try {
+    const res = await fetch(`${API}/novels/slug/${slug}`, {
+      next: { revalidate: 3600 },
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
 export async function generateMetadata({ params }) {
-  const data = SIMILAR_DATA[params.slug];
-  if (!data) return { title: 'Similar Novels | idenwebstudio' };
+  // Use SIMILAR_DATA if available, otherwise fetch the novel from the API
+  const staticData = SIMILAR_DATA[params.slug];
+  const title = staticData?.title ?? (await fetchNovelBySlug(params.slug))?.title ?? params.slug;
+
   return {
-    title: `Novels Like ${data.title} | Read Free at idenwebstudio`,
-    description: `Finished ${data.title}? Here are the best similar novels to read next — all free at idenwebstudio.`,
-    keywords: data.keywords,
+    title: `Novels Like ${title} | Read Free at idenwebstudio`,
+    description: `Finished ${title}? Here are the best similar novels to read next — all free at idenwebstudio.`,
+    keywords: staticData?.keywords ?? `novels like ${title}, similar to ${title}, ${title} alternatives`,
     alternates: { canonical: `${BASE_URL}/novels-like/${params.slug}` },
     openGraph: {
-      title: `Novels Like ${data.title}`,
-      description: `Finished ${data.title}? Here are the best similar novels to read next — free online.`,
+      title: `Novels Like ${title}`,
+      description: `Finished ${title}? Here are the best similar novels to read next — free online.`,
       type: 'website',
       siteName: 'idenwebstudio',
     },
@@ -41,33 +56,44 @@ async function fetchSimilarNovels(slug, limit = 8) {
 }
 
 export default async function NovelsLikePage({ params }) {
-  const data = SIMILAR_DATA[params.slug];
+  // Try static data first; fall back to fetching the novel from the API
+  const staticData = SIMILAR_DATA[params.slug];
+  let novelTitle = staticData?.title;
+  let description = staticData?.description;
 
-  if (!data) {
-    return (
-      <PageLayout>
-        <div style={{ padding: '80px 0', textAlign: 'center' }}>
-          <h1 style={{ fontFamily: 'var(--font-display)' }}>Page not found</h1>
-          <Link href="/browse" style={{ color: 'var(--accent-purple)' }}>Browse all novels →</Link>
-        </div>
-      </PageLayout>
-    );
+  if (!novelTitle) {
+    const novel = await fetchNovelBySlug(params.slug);
+    if (!novel) {
+      // Novel doesn't exist in DB at all — show not found
+      return (
+        <PageLayout>
+          <div style={{ padding: '80px 0', textAlign: 'center' }}>
+            <h1 style={{ fontFamily: 'var(--font-display)' }}>Page not found</h1>
+            <Link href="/browse" style={{ color: 'var(--accent-purple)' }}>Browse all novels →</Link>
+          </div>
+        </PageLayout>
+      );
+    }
+    novelTitle = novel.title;
+    // Auto-generate a generic description from the novel's own description
+    description = novel.description
+      ? `${novel.description.slice(0, 200).trim()}... If this novel resonated with you, these similar reads are worth checking out.`
+      : `If you enjoyed ${novelTitle}, here are the most similar novels on our site based on shared tags and genres.`;
   }
 
-  // Fetch similar novels automatically — no hardcoded slugs needed
   const novels = await fetchSimilarNovels(params.slug, 8);
 
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
-    name: `Novels Like ${data.title}`,
-    description: `Best novels similar to ${data.title} — read free at idenwebstudio.`,
+    name: `Novels Like ${novelTitle}`,
+    description: `Best novels similar to ${novelTitle} — read free at idenwebstudio.`,
     url: `${BASE_URL}/novels-like/${params.slug}`,
     breadcrumb: {
       '@type': 'BreadcrumbList',
       itemListElement: [
         { '@type': 'ListItem', position: 1, name: 'Home', item: BASE_URL },
-        { '@type': 'ListItem', position: 2, name: `Novels Like ${data.title}`, item: `${BASE_URL}/novels-like/${params.slug}` },
+        { '@type': 'ListItem', position: 2, name: `Novels Like ${novelTitle}`, item: `${BASE_URL}/novels-like/${params.slug}` },
       ],
     },
   };
@@ -82,14 +108,14 @@ export default async function NovelsLikePage({ params }) {
             <nav style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '20px', fontFamily: 'var(--font-mono)' }}>
               <Link href="/" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Home</Link>
               {' › '}
-              <span style={{ color: 'var(--text-primary)' }}>Novels Like {data.title}</span>
+              <span style={{ color: 'var(--text-primary)' }}>Novels Like {novelTitle}</span>
             </nav>
 
             <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', fontWeight: 700, marginBottom: '16px' }}>
-              Novels Like {data.title}
+              Novels Like {novelTitle}
             </h1>
             <p style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-body)', fontSize: '0.95rem', lineHeight: '1.7', maxWidth: '720px', marginBottom: '48px' }}>
-              {data.description}
+              {description}
             </p>
 
             {novels.length > 0 ? (
@@ -137,7 +163,6 @@ export default async function NovelsLikePage({ params }) {
                           </h2>
                         </Link>
 
-                        {/* Show shared tags as "why it's similar" */}
                         {(novel.tags || []).length > 0 && (
                           <div style={{
                             background: 'rgba(139,92,246,0.06)',
