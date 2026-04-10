@@ -6,9 +6,7 @@ import { SIMILAR_DATA, SIMILAR_SLUGS } from '../data';
 const BASE_URL = 'https://idenwebstudio.online';
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
-export function generateStaticParams() {
-  return SIMILAR_SLUGS.map(slug => ({ slug }));
-}
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }) {
   const data = SIMILAR_DATA[params.slug];

@@ -6,9 +6,7 @@ import { BEST_LISTS, BEST_LIST_SLUGS, BEST_LIST_LABELS } from '../data';
 const BASE_URL = 'https://idenwebstudio.online';
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
-export function generateStaticParams() {
-  return BEST_LIST_SLUGS.map(list => ({ list }));
-}
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }) {
   const data = BEST_LISTS[params.list];
