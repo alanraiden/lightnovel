@@ -8,7 +8,56 @@ const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 export const dynamic = 'force-dynamic';
 
-// Fetch the novel itself by slug to get its title (used when slug isn't in SIMILAR_DATA)
+// ── Fetchers ─────────────────────────────────────────────────────────────────
+
+// For novels ON your site: scored by shared tags + genres
+async function fetchSimilarBySlug(slug, limit = 8) {
+  try {
+    const res = await fetch(`${API}/novels/slug/${slug}/similar?limit=${limit}`, {
+      next: { revalidate: 3600 },
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.novels || [];
+  } catch {
+    return [];
+  }
+}
+
+// For EXTERNAL novels (not in your DB): query each tag, merge, deduplicate, sort by views
+async function fetchSimilarByTags(tags, genres, limit = 8) {
+  if (!tags?.length && !genres?.length) return [];
+  try {
+    // Query each tag separately then merge (same pattern as /best page)
+    const tagResults = await Promise.all(
+      (tags || []).map(async tag => {
+        const res = await fetch(
+          `${API}/novels/by-tag/${encodeURIComponent(tag)}?sort=views&limit=${limit}`,
+          { next: { revalidate: 3600 } }
+        );
+        if (!res.ok) return [];
+        const data = await res.json();
+        return data.novels || [];
+      })
+    );
+
+    // Merge all results, deduplicate by _id
+    const seen = new Set();
+    const merged = tagResults.flat().filter(n => {
+      if (seen.has(String(n._id))) return false;
+      seen.add(String(n._id));
+      return true;
+    });
+
+    // Sort by views descending and return top N
+    merged.sort((a, b) => (b.views || 0) - (a.views || 0));
+    return merged.slice(0, limit);
+  } catch {
+    return [];
+  }
+}
+
+// For novels not in SIMILAR_DATA at all: fetch the novel from your DB by slug
 async function fetchNovelBySlug(slug) {
   try {
     const res = await fetch(`${API}/novels/slug/${slug}`, {
@@ -21,10 +70,16 @@ async function fetchNovelBySlug(slug) {
   }
 }
 
+// ── Metadata ─────────────────────────────────────────────────────────────────
+
 export async function generateMetadata({ params }) {
-  // Use SIMILAR_DATA if available, otherwise fetch the novel from the API
   const staticData = SIMILAR_DATA[params.slug];
-  const title = staticData?.title ?? (await fetchNovelBySlug(params.slug))?.title ?? params.slug;
+  let title = staticData?.title;
+
+  if (!title) {
+    const novel = await fetchNovelBySlug(params.slug);
+    title = novel?.title ?? params.slug;
+  }
 
   return {
     title: `Novels Like ${title} | Read Free at idenwebstudio`,
@@ -40,31 +95,27 @@ export async function generateMetadata({ params }) {
   };
 }
 
-// Fetch similar novels from the API — scored automatically by shared tags + genres
-async function fetchSimilarNovels(slug, limit = 8) {
-  try {
-    const res = await fetch(
-      `${API}/novels/slug/${slug}/similar?limit=${limit}`,
-      { next: { revalidate: 3600 } }
-    );
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data.novels || [];
-  } catch {
-    return [];
-  }
-}
+// ── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function NovelsLikePage({ params }) {
-  // Try static data first; fall back to fetching the novel from the API
   const staticData = SIMILAR_DATA[params.slug];
   let novelTitle = staticData?.title;
   let description = staticData?.description;
+  let novels = [];
 
-  if (!novelTitle) {
+  if (staticData) {
+    // Entry exists in data.js
+    if (staticData.tags?.length) {
+      // EXTERNAL novel — not in your DB — fetch by tags/genres
+      novels = await fetchSimilarByTags(staticData.tags, staticData.genres, 8);
+    } else {
+      // INTERNAL novel — on your site — fetch by slug similarity
+      novels = await fetchSimilarBySlug(params.slug, 8);
+    }
+  } else {
+    // Not in data.js at all — try fetching from your DB (novel page "Novels Like This →" button)
     const novel = await fetchNovelBySlug(params.slug);
     if (!novel) {
-      // Novel doesn't exist in DB at all — show not found
       return (
         <PageLayout>
           <div style={{ padding: '80px 0', textAlign: 'center' }}>
@@ -75,13 +126,11 @@ export default async function NovelsLikePage({ params }) {
       );
     }
     novelTitle = novel.title;
-    // Auto-generate a generic description from the novel's own description
     description = novel.description
       ? `${novel.description.slice(0, 200).trim()}... If this novel resonated with you, these similar reads are worth checking out.`
       : `If you enjoyed ${novelTitle}, here are the most similar novels on our site based on shared tags and genres.`;
+    novels = await fetchSimilarBySlug(params.slug, 8);
   }
-
-  const novels = await fetchSimilarNovels(params.slug, 8);
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -169,10 +218,6 @@ export default async function NovelsLikePage({ params }) {
                             border: '1px solid var(--border-accent)',
                             borderRadius: 'var(--radius)',
                             padding: '10px 14px',
-                            fontSize: '0.85rem',
-                            color: 'var(--text-secondary)',
-                            fontFamily: 'var(--font-body)',
-                            lineHeight: '1.6',
                           }}>
                             <span style={{ color: 'var(--accent-purple)', fontFamily: 'var(--font-mono)', fontSize: '0.72rem', display: 'block', marginBottom: '6px' }}>
                               SIMILAR TAGS
