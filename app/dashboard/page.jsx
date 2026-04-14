@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { getNovels, createNovel, updateNovel, deleteNovel, getChapters, getChapterForEdit, createChapter, updateChapter, deleteChapter, bulkImportChapters } from '@/services/api';
+import { getNovels, createNovel, updateNovel, deleteNovel, getChapters, getChapterForEdit, createChapter, updateChapter, deleteChapter, bulkImportChapters, postGhostComment } from '@/services/api';
 import PageLayout from '@/components/PageLayout';
 import './Dashboard.css';
 
@@ -470,7 +470,244 @@ function ChapterManager({ novel, onBack }) {
   );
 }
 
-const TABS = ['Overview', 'My Novels', 'Upload Novel', 'Analytics'];
+
+// ── Ghost Comment colours ─────────────────────────────────────────────────────
+const GHOST_COLORS = [
+  '#e74c3c','#e67e22','#f1c40f','#2ecc71',
+  '#1abc9c','#3498db','#9b59b6','#e91e63',
+  '#00bcd4','#ff5722','#795548','#607d8b',
+];
+
+function nameToColor(name) {
+  if (!name) return GHOST_COLORS[0];
+  let hash = 0;
+  for (const c of name) hash = (hash * 31 + c.charCodeAt(0)) & 0xffffffff;
+  return GHOST_COLORS[Math.abs(hash) % GHOST_COLORS.length];
+}
+
+// ── GhostCommentPanel ─────────────────────────────────────────────────────────
+function GhostCommentPanel({ novels }) {
+  const [novelId,    setNovelId]    = useState('');
+  const [ghostName,  setGhostName]  = useState('');
+  const [ghostColor, setGhostColor] = useState('');   // '' = auto-derive from name
+  const [chapterNum, setChapterNum] = useState('');
+  const [text,       setText]       = useState('');
+  const [loading,    setLoading]    = useState(false);
+  const [msg,        setMsg]        = useState('');
+  const [history,    setHistory]    = useState([]);   // session-only log
+
+  const previewColor = ghostColor || nameToColor(ghostName);
+  const initial      = ghostName.trim() ? ghostName.trim()[0].toUpperCase() : '?';
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!novelId)          { setMsg('Error: Select a novel first'); return; }
+    if (!ghostName.trim()) { setMsg('Error: Ghost name is required'); return; }
+    if (!text.trim())      { setMsg('Error: Comment text is required'); return; }
+    setLoading(true); setMsg('');
+    try {
+      const comment = await postGhostComment(novelId, {
+        ghostName:  ghostName.trim(),
+        ghostColor: previewColor,
+        text:       text.trim(),
+        chapterNum: chapterNum !== '' ? Number(chapterNum) : null,
+      });
+      const novel = novels.find(n => n._id === novelId);
+      setHistory(h => [{
+        _id:        comment._id,
+        novelTitle: novel?.title || novelId,
+        novelId,
+        ghostName:  ghostName.trim(),
+        ghostColor: previewColor,
+        chapterNum: chapterNum !== '' ? Number(chapterNum) : null,
+        text:       text.trim(),
+        postedAt:   new Date(),
+      }, ...h].slice(0, 30));
+      setMsg('✅ Posted!');
+      setText('');                          // clear text, keep name/novel/color
+      setTimeout(() => setMsg(''), 2000);
+    } catch (err) {
+      setMsg('Error: ' + err.message);
+    }
+    setLoading(false);
+  }
+
+  return (
+    <div className="dashboard-content">
+      {/* Header */}
+      <div style={{display:'flex', alignItems:'center', gap:'12px', marginBottom:'6px', flexWrap:'wrap'}}>
+        <div className="dashboard-section-title" style={{margin:0}}>👻 Ghost Comments</div>
+        <span className="ghost-admin-badge">Admin only · invisible to visitors</span>
+      </div>
+      <p style={{color:'var(--text-muted)', fontSize:'0.84rem', marginBottom:'28px', lineHeight:'1.6'}}>
+        Post comments that appear to come from regular readers. Pick a novel, invent a username, write the comment — visitors see it as a normal comment.
+      </p>
+
+      <div className="ghost-panel-grid">
+
+        {/* ── Left: Compose form ────────────────────────────────────────── */}
+        <div className="upload-form" style={{gap:'20px'}}>
+
+          {/* Novel selector */}
+          <div className="form-group">
+            <label>Novel *</label>
+            <select value={novelId} onChange={e => setNovelId(e.target.value)} required>
+              <option value="">— Select a novel —</option>
+              {novels.map(n => <option key={n._id} value={n._id}>{n.title}</option>)}
+            </select>
+          </div>
+
+          {/* Ghost name + color */}
+          <div style={{display:'grid', gridTemplateColumns:'1fr auto', gap:'14px', alignItems:'end'}}>
+            <div className="form-group" style={{margin:0}}>
+              <label>Username *</label>
+              <input
+                value={ghostName}
+                onChange={e => { setGhostName(e.target.value); setGhostColor(''); }}
+                placeholder="e.g. KuroReader, xX_DarkFate_Xx, anonymous123"
+                maxLength={40}
+              />
+            </div>
+            {/* Live avatar preview */}
+            <div className="ghost-avatar-preview" style={{background: previewColor}}>
+              {initial}
+            </div>
+          </div>
+
+          {/* Color swatches — click to pin a colour instead of auto */}
+          <div className="form-group" style={{gap:'6px'}}>
+            <label>Avatar Colour <span style={{color:'var(--text-muted)', fontWeight:400}}>(auto-picked from name, or override)</span></label>
+            <div className="ghost-color-grid">
+              {GHOST_COLORS.map(c => (
+                <button
+                  key={c} type="button"
+                  className={'ghost-swatch' + (ghostColor === c ? ' selected' : '')}
+                  style={{background: c}}
+                  onClick={() => setGhostColor(ghostColor === c ? '' : c)}
+                  title={c}
+                />
+              ))}
+              {ghostColor && (
+                <button type="button" className="ghost-swatch-clear" onClick={() => setGhostColor('')} title="Reset to auto">
+                  ↺
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Chapter number (optional) */}
+          <div className="form-group">
+            <label>Chapter Number <span style={{color:'var(--text-muted)', fontWeight:400}}>(leave blank for novel-level)</span></label>
+            <input
+              type="number" min="1"
+              value={chapterNum}
+              onChange={e => setChapterNum(e.target.value)}
+              placeholder="e.g. 12  — blank = main novel comments"
+              style={{maxWidth:'240px'}}
+            />
+          </div>
+
+          {/* Comment text */}
+          <div className="form-group">
+            <label>Comment *</label>
+            <textarea
+              rows={5}
+              value={text}
+              onChange={e => setText(e.target.value)}
+              maxLength={1000}
+              placeholder={
+                `e.g. Just caught up to ch ${chapterNum || '1'}, the plot twist was insane!! Can't wait for more 🔥`
+              }
+              style={{resize:'vertical', minHeight:'100px'}}
+            />
+            <div className="form-hint">{text.length} / 1000</div>
+          </div>
+
+          {/* Comment preview */}
+          {(ghostName.trim() || text.trim()) && (
+            <div className="ghost-preview-card">
+              <div className="ghost-preview-label">Preview — how visitors see it</div>
+              <div className="ghost-preview-body">
+                <div className="ghost-preview-avatar" style={{background: previewColor}}>
+                  {initial}
+                </div>
+                <div style={{flex:1}}>
+                  <div style={{display:'flex', alignItems:'center', gap:'8px', marginBottom:'5px'}}>
+                    <span style={{fontWeight:600, fontSize:'0.9rem'}}>{ghostName.trim() || 'Username'}</span>
+                    <span style={{fontFamily:'var(--font-mono)', fontSize:'0.7rem', color:'var(--text-muted)'}}>just now</span>
+                  </div>
+                  <p style={{margin:0, fontSize:'0.88rem', lineHeight:'1.6', color:'var(--text-secondary)', whiteSpace:'pre-wrap'}}>
+                    {text.trim() || <span style={{opacity:0.4}}>Your comment will appear here…</span>}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {msg && (
+            <div className={`upload-success${msg.startsWith('Error') ? ' upload-error' : ''}`} style={{margin:0}}>
+              {msg}
+            </div>
+          )}
+
+          <div className="form-actions" style={{paddingTop:0, borderTop:'none'}}>
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={handleSubmit}
+              disabled={loading || !novelId || !ghostName.trim() || !text.trim()}
+              style={{minWidth:'160px'}}
+            >
+              {loading ? 'Posting…' : '👻 Post Ghost Comment'}
+            </button>
+          </div>
+        </div>
+
+        {/* ── Right: Session history ────────────────────────────────────── */}
+        <div>
+          <div className="dashboard-section-title">Posted This Session</div>
+          {history.length === 0 ? (
+            <div style={{
+              background:'var(--bg-card)', border:'1px solid var(--border)',
+              borderRadius:'var(--radius-lg)', padding:'40px',
+              textAlign:'center', color:'var(--text-muted)',
+              fontFamily:'var(--font-mono)', fontSize:'0.82rem',
+            }}>
+              Comments you post will appear here.<br/>
+              <span style={{opacity:0.5, fontSize:'0.75rem'}}>Session only — refreshing clears this list.</span>
+            </div>
+          ) : (
+            <div style={{display:'flex', flexDirection:'column', gap:'10px'}}>
+              {history.map((h, i) => (
+                <div key={h._id || i} className="ghost-history-card">
+                  <div style={{display:'flex', alignItems:'center', gap:'10px', marginBottom:'8px'}}>
+                    <div className="ghost-avatar-sm" style={{background: h.ghostColor}}>{h.ghostName[0].toUpperCase()}</div>
+                    <div style={{flex:1, minWidth:0}}>
+                      <div style={{fontWeight:600, fontSize:'0.85rem', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{h.ghostName}</div>
+                      <div style={{fontFamily:'var(--font-mono)', fontSize:'0.7rem', color:'var(--text-muted)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
+                        {h.novelTitle}{h.chapterNum != null ? ` · Ch.${h.chapterNum}` : ' · Novel level'}
+                      </div>
+                    </div>
+                    <span style={{fontFamily:'var(--font-mono)', fontSize:'0.68rem', color:'var(--text-muted)', whiteSpace:'nowrap'}}>
+                      {h.postedAt.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
+                    </span>
+                  </div>
+                  <p style={{margin:0, fontSize:'0.82rem', color:'var(--text-secondary)', lineHeight:'1.5',
+                    overflow:'hidden', display:'-webkit-box', WebkitLineClamp:3, WebkitBoxOrient:'vertical'}}>
+                    {h.text}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+const TABS = ['Overview', 'My Novels', 'Upload Novel', 'Analytics', 'Ghost Comments'];
 
 export default function DashboardPage() {
   const { user, token } = useAuth();
@@ -693,6 +930,10 @@ export default function DashboardPage() {
                 </div>
               </div>
             </div>
+          )}
+
+          {activeTab === 'Ghost Comments' && (
+            <GhostCommentPanel novels={novels} />
           )}
 
           {confirm && <ConfirmDialog message="Delete this novel and ALL its chapters? Cannot be undone." onConfirm={() => handleDeleteNovel(confirm)} onCancel={() => setConfirm(null)} />}

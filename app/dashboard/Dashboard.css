@@ -457,3 +457,150 @@
   display: flex; align-items: center; justify-content: center; padding: 20px;
   animation: fadeInUp 0.2s ease;
 }
+
+/* ── Ghost Comments panel ────────────────────────────────────────────────── */
+.ghost-admin-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  background: rgba(139,92,246,0.12);
+  border: 1px solid rgba(139,92,246,0.3);
+  border-radius: 100px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--accent-purple);
+  letter-spacing: 0.03em;
+}
+
+.ghost-panel-grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 28px;
+  align-items: start;
+}
+
+/* Color swatch grid */
+.ghost-color-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.ghost-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+}
+
+.ghost-swatch:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.15);
+}
+
+.ghost-swatch.selected {
+  border-color: white;
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.3);
+  transform: scale(1.15);
+}
+
+.ghost-swatch-clear {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px dashed var(--border-accent);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+
+.ghost-swatch-clear:hover {
+  color: var(--text-primary);
+  border-color: var(--text-secondary);
+}
+
+/* Avatar preview (large, next to name input) */
+.ghost-avatar-preview {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: white;
+  flex-shrink: 0;
+  border: 2px solid rgba(255,255,255,0.15);
+  transition: background 0.2s;
+  margin-bottom: 2px;
+}
+
+/* Avatar (small, in history cards) */
+.ghost-avatar-sm {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.75rem;
+  color: white;
+  flex-shrink: 0;
+}
+
+/* Comment preview card */
+.ghost-preview-card {
+  background: var(--bg-dark);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.ghost-preview-label {
+  padding: 8px 14px;
+  background: rgba(139,92,246,0.08);
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--accent-purple);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.ghost-preview-body {
+  padding: 14px 16px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+/* History cards */
+.ghost-history-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  transition: var(--transition);
+}
+
+.ghost-history-card:hover {
+  border-color: var(--border-accent);
+}
+
+@media (max-width: 900px) {
+  .ghost-panel-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -63,6 +63,8 @@ export const getComments    = (novelId, page = 1, chapterNum = undefined) => {
   else url += '&chapterNum=null';
   return req(url);
 };
+export const postGhostComment = (novelId, data) =>
+  req('/novels/' + novelId + '/comments/ghost', { method: 'POST', body: JSON.stringify(data) });
 export const addComment     = (novelId, text, chapterNum = undefined)    => req('/novels/' + novelId + '/comments', { method: 'POST', body: JSON.stringify({ text, chapterNum: chapterNum ?? null }) });
 export const deleteComment  = (novelId, commentId)=> req('/novels/' + novelId + '/comments/' + commentId, { method: 'DELETE' });
 export const likeComment    = (novelId, commentId)=> req('/novels/' + novelId + '/comments/' + commentId + '/like', { method: 'POST' });
