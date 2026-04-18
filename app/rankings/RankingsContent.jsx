@@ -9,8 +9,122 @@ const PLACEHOLDER = 'https://images.unsplash.com/photo-1578632767115-351597cf247
 const TABS = ['Top Rated', 'Most Viewed', 'Most Chapters'];
 const SORT_MAP = { 'Top Rated': 'rating', 'Most Viewed': 'views', 'Most Chapters': 'chapters' };
 
+function medalColor(i) {
+  return i === 0 ? 'var(--accent-gold)' : i === 1 ? '#c0c0c0' : i === 2 ? '#cd7f32' : 'var(--text-muted)';
+}
+
+function RankCard({ novel, i, tab }) {
+  const href = novel.slug ? `/novel/s/${novel.slug}` : `/novel/${novel._id}`;
+
+  const latestChapter = novel.latestChapter || novel.lastChapter || null;
+  const chapterLabel = latestChapter
+    ? (latestChapter.title || `Chapter ${latestChapter.number || novel.chapterCount}`)
+    : novel.chapterCount > 0 ? `Chapter ${novel.chapterCount}` : null;
+
+  const statValue = tab === 'Top Rated'
+    ? `⭐ ${novel.rating || '—'}`
+    : tab === 'Most Viewed'
+    ? `${novel.views?.toLocaleString() || 0} views`
+    : `${novel.chapterCount || 0} ch`;
+
+  return (
+    <Link href={href} style={{ textDecoration: 'none', display: 'block' }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '44px 80px 1fr',
+          gap: '12px',
+          alignItems: 'stretch',
+          padding: '12px 14px',
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius)',
+          transition: 'border-color 0.2s, background 0.2s',
+        }}
+        onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--border-accent)'; e.currentTarget.style.background = 'var(--bg-elevated)'; }}
+        onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--bg-card)'; }}
+      >
+        {/* Rank */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <span style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: i < 3 ? '1.35rem' : '1rem',
+            fontWeight: 700,
+            color: medalColor(i),
+            lineHeight: 1,
+          }}>
+            {i < 3 ? ['🥇', '🥈', '🥉'][i] : `#${i + 1}`}
+          </span>
+        </div>
+
+        {/* Cover */}
+        <div style={{ flexShrink: 0, borderRadius: '6px', overflow: 'hidden' }}>
+          <img
+            src={novel.cover || PLACEHOLDER}
+            alt={novel.title}
+            onError={e => { e.target.src = PLACEHOLDER; }}
+            style={{ width: '80px', height: '108px', objectFit: 'cover', display: 'block' }}
+          />
+        </div>
+
+        {/* Text */}
+        <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '4px' }}>
+          <div style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: '0.82rem',
+            fontWeight: 600,
+            color: 'var(--text-primary)',
+            lineHeight: 1.35,
+            overflow: 'hidden',
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+          }}>
+            {novel.title}
+          </div>
+
+          {chapterLabel && (
+            <div style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              color: 'var(--text-primary)',
+            }}>
+              {chapterLabel}
+            </div>
+          )}
+
+          {novel.description && (
+            <div style={{
+              fontSize: '0.78rem',
+              color: 'var(--text-secondary)',
+              lineHeight: 1.5,
+              overflow: 'hidden',
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+            }}>
+              {novel.description}
+            </div>
+          )}
+
+          <div style={{
+            marginTop: '4px',
+            fontFamily: 'var(--font-mono)',
+            fontSize: '0.68rem',
+            fontWeight: 700,
+            color: tab === 'Top Rated' ? 'var(--accent-gold)' : tab === 'Most Viewed' ? 'var(--accent-blue)' : 'var(--accent-purple)',
+          }}>
+            {statValue}
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
 export default function RankingsPage() {
-  const [tab, setTab]       = useState('Top Rated');
+  const [tab, setTab] = useState('Top Rated');
   const [novels, setNovels] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -22,69 +136,53 @@ export default function RankingsPage() {
       .finally(() => setLoading(false));
   }, [tab]);
 
-  const medalColor = i => i === 0 ? 'var(--accent-gold)' : i === 1 ? '#c0c0c0' : i === 2 ? '#cd7f32' : 'var(--text-muted)';
-
   return (
     <PageLayout>
-      <div style={{padding:'40px 0 80px', minHeight:'100vh'}}>
+      <div style={{ padding: '40px 0 80px', minHeight: '100vh' }}>
         <div className="container">
-          <h1 style={{fontFamily:'var(--font-display)', fontSize:'2rem', fontWeight:700, marginBottom:'8px'}}>Rankings</h1>
-          <p style={{color:'var(--text-muted)', fontFamily:'var(--font-mono)', fontSize:'0.82rem', marginBottom:'28px'}}>Top novels on idenwebstudio</p>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.4rem,4vw,2rem)', fontWeight: 700, marginBottom: '6px' }}>
+            Rankings
+          </h1>
+          <p style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '0.82rem', marginBottom: '24px' }}>
+            Top novels on idenwebstudio
+          </p>
 
-          <div style={{display:'flex', gap:'4px', borderBottom:'1px solid var(--border)', marginBottom:'28px'}}>
+          <div style={{ display: 'flex', gap: '4px', borderBottom: '1px solid var(--border)', marginBottom: '24px', overflowX: 'auto', scrollbarWidth: 'none' }}>
             {TABS.map(t => (
               <button key={t} onClick={() => setTab(t)} style={{
-                padding:'10px 20px', background:'transparent', border:'none',
+                padding: '10px 18px',
+                background: 'transparent',
+                border: 'none',
                 borderBottom: t === tab ? '2px solid var(--accent-orange)' : '2px solid transparent',
-                marginBottom:'-1px', color: t === tab ? 'var(--accent-orange)' : 'var(--text-secondary)',
-                fontFamily:'var(--font-mono)', fontSize:'0.82rem', cursor:'pointer', transition:'color 0.2s'
+                marginBottom: '-1px',
+                color: t === tab ? 'var(--accent-orange)' : 'var(--text-secondary)',
+                fontFamily: 'var(--font-mono)',
+                fontSize: '0.8rem',
+                cursor: 'pointer',
+                transition: 'color 0.2s',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
               }}>{t}</button>
             ))}
           </div>
 
-          <div style={{display:'flex', flexDirection:'column', gap:'2px'}}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             {loading
-              ? [...Array(10)].map((_,i) => (
-                  <div key={i} style={{height:'80px', background:'var(--bg-card)', border:'1px solid var(--border)', borderRadius:'var(--radius)', animation:'shimmer 1.5s infinite', backgroundSize:'200% 100%', backgroundImage:'linear-gradient(90deg,var(--bg-elevated) 25%,var(--bg-card) 50%,var(--bg-elevated) 75%)'}} />
-                ))
-              : novels.map((n, i) => (
-                  <Link key={n._id} href={n.slug ? `/novel/s/${n.slug}` : `/novel/${n._id}`} style={{textDecoration:'none'}}>
-                    <div style={{
-                      display:'grid', gridTemplateColumns:'56px 62px 1fr auto',
-                      alignItems:'center', gap:'16px', padding:'14px 20px',
-                      background:'var(--bg-card)', border:'1px solid var(--border)',
-                      borderRadius:'var(--radius)', transition:'all 0.2s',
-                    }}>
-                      <span style={{fontFamily:'var(--font-display)', fontSize:'1.5rem', fontWeight:700, color: medalColor(i), textAlign:'center'}}>
-                        {i < 3 ? ['🥇','🥈','🥉'][i] : `#${i+1}`}
-                      </span>
-                      <img src={n.cover || PLACEHOLDER} alt={n.title} style={{width:'46px',height:'62px',objectFit:'cover',borderRadius:'4px',display:'block'}}
-                        onError={e => { e.target.src = PLACEHOLDER; }} />
-                      <div>
-                        <div style={{display:'flex', alignItems:'center', gap:'8px', marginBottom:'6px', flexWrap:'wrap'}}>
-                          <span style={{fontFamily:'var(--font-display)', fontSize:'0.9rem', fontWeight:600, color:'var(--text-primary)'}}>{n.title}</span>
-                          {n.isOriginal && <span style={{background:'linear-gradient(135deg,#f59e0b,#d97706)', color:'white', fontSize:'0.58rem', fontWeight:700, fontFamily:'var(--font-mono)', letterSpacing:'0.1em', padding:'2px 6px', borderRadius:'4px', flexShrink:0}}>ORIGINAL</span>}
-                        </div>
-                        <div style={{display:'flex', gap:'10px', alignItems:'center', flexWrap:'wrap'}}>
-                          <span style={{color:'var(--text-muted)', fontSize:'0.78rem', fontFamily:'var(--font-mono)'}}>
-                            {n.chapterCount > 0 ? `Ch.${n.chapterCount}` : 'No chapters'}
-                          </span>
-                          {(n.genres||[]).slice(0,2).map(g => <span key={g} className="genre-tag">{g}</span>)}
-                          <span className={`badge badge-${n.status}`}>{n.status}</span>
-                        </div>
-                      </div>
-                      <div style={{textAlign:'right', flexShrink:0}}>
-                        {tab === 'Top Rated'     && <div style={{color:'var(--accent-gold)', fontFamily:'var(--font-mono)', fontSize:'1.1rem', fontWeight:700}}>⭐ {n.rating}</div>}
-                        {tab === 'Most Viewed'   && <div style={{color:'var(--accent-blue)', fontFamily:'var(--font-mono)', fontSize:'1.1rem', fontWeight:700}}>{n.views?.toLocaleString()} views</div>}
-                        {tab === 'Most Chapters' && <div style={{color:'var(--accent-purple)', fontFamily:'var(--font-mono)', fontSize:'1.1rem', fontWeight:700}}>{n.chapterCount} ch</div>}
-                        <div style={{color:'var(--text-muted)', fontSize:'0.7rem', fontFamily:'var(--font-mono)', marginTop:'4px'}}>{n.ratingCount || 0} ratings</div>
-                      </div>
-                    </div>
-                  </Link>
-                ))
+              ? [...Array(10)].map((_, i) => (
+                <div key={i} style={{
+                  height: '108px',
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius)',
+                  backgroundImage: 'linear-gradient(90deg,var(--bg-elevated) 25%,var(--bg-card) 50%,var(--bg-elevated) 75%)',
+                  backgroundSize: '200% 100%',
+                  animation: 'shimmer 1.5s infinite',
+                }} />
+              ))
+              : novels.map((n, i) => <RankCard key={n._id} novel={n} i={i} tab={tab} />)
             }
             {!loading && novels.length === 0 && (
-              <div style={{textAlign:'center', padding:'60px', color:'var(--text-muted)', fontFamily:'var(--font-mono)'}}>
+              <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
                 No novels yet. Be the first to publish!
               </div>
             )}

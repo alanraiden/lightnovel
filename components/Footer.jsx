@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+// Copy your existing Footer.css path here — no changes needed to the CSS
 import './Footer.css';
 
 export default function Footer() {
@@ -16,7 +17,7 @@ export default function Footer() {
               </svg>
               <span>iden<span style={{color:'var(--accent-orange)'}}>webstudio</span></span>
             </div>
-            <p className="footer-tagline">Your gateway to infinite worlds. Discover, read, and lose yourself in thousands of light novels.</p>
+            <p className="footer-tagline">Your gateway to infinite worlds. Discover, read, and lose yourself in thousands of Korean web novels.</p>
             <div className="footer-social">
               <a href="https://discord.gg/MJf9mUra" target="_blank" rel="noopener noreferrer" className="discord-footer-btn">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
@@ -43,6 +44,8 @@ export default function Footer() {
 
           <div className="footer-links-group">
             <div className="footer-links-title">Platform</div>
+            <Link href="/about">About Us</Link>
+            <Link href="/contact">Contact</Link>
             <a href="https://discord.gg/MJf9mUra" target="_blank" rel="noopener noreferrer">Discord Community</a>
             <Link href="/privacy">Privacy Policy</Link>
             <Link href="/privacy">Terms of Service</Link>
