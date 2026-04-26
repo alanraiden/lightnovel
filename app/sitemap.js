@@ -52,7 +52,7 @@ export default async function sitemap() {
       // No cap — all chapters indexed (was incorrectly capped at 50 before)
       for (let i = 1; i <= novel.chapterCount; i++) {
         chapterPages.push({
-          url: `${BASE}/read/s/${novel.slug}/chapter-${i}`,
+          url: `${BASE}/novel/s/${novel.slug}/chapter-${i}`,
           changeFrequency: 'monthly',
           priority: 0.7,
         });
