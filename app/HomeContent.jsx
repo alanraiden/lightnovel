@@ -272,7 +272,7 @@ function LatestUpdates({ latestAll, loading, isMobile }) {
                 <div className="lu-list-chapter">{n.chapterCount > 0 ? `Ch.${n.chapterCount}` : 'No chapters'}</div>
                 <div className="lu-list-meta">
                   <span className={`badge badge-${n.status}`}>{n.status}</span>
-                  <span className="lu-list-date">{timeAgo(n.updatedAt)}</span>
+                  <span className="lu-list-date">{timeAgo(n.lastChapterAt || n.updatedAt)}</span>
                 </div>
               </div>
               <svg className="lu-list-arrow" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
@@ -296,7 +296,7 @@ function LatestUpdates({ latestAll, loading, isMobile }) {
               </div>
               <div className="lu-grid-info">
                 <div className="lu-grid-title">{n.title}</div>
-                <div className="lu-grid-date">{timeAgo(n.updatedAt)}</div>
+                <div className="lu-grid-date">{timeAgo(n.lastChapterAt || n.updatedAt)}</div>
               </div>
             </Link>
           ))}
