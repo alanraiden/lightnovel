@@ -5,7 +5,7 @@ const GENRES = ['Action','Adventure','Comedy','Drama','Fantasy','Harem','Histori
 
 import { SIMILAR_SLUGS } from './novels-like/data';
 import { BEST_LIST_SLUGS } from './best/data';
-
+export const revalidate = 86400; // regenerate at most once every 24 hours
 export default async function sitemap() {
   const staticPages = [
     { url: BASE,               changeFrequency: 'daily',   priority: 1.0 },
